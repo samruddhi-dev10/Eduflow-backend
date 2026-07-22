@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
 require('dotenv').config();
 
 const authRoutes = require('./routes/authRoutes');
@@ -17,18 +19,23 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Swagger Interactive API Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 // Root Welcome Route
 app.get('/', (req, res) => {
   res.status(200).json({
     message: 'Welcome to Eduflow Backend API!',
+    swaggerDocs: 'http://localhost:' + PORT + '/api-docs',
     documentation: {
       auth: {
-        register: 'POST /api/auth/register',
-        login: 'POST /api/auth/login'
+        login: 'POST /api/auth/login',
+        forgotPassword: 'POST /api/auth/forgot-password',
+        socialLogin: 'POST /api/auth/social-login',
+        register: 'POST /api/auth/register'
       },
       courses: {
         getAll: 'GET /api/courses',
-        getOne: 'GET /api/courses/:id',
         create: 'POST /api/courses'
       }
     }
@@ -45,4 +52,5 @@ app.use(errorHandler);
 // Start Server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`📑 Interactive Swagger Docs available at http://localhost:${PORT}/api-docs`);
 });
