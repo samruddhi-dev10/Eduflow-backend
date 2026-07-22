@@ -1,6 +1,25 @@
 # Eduflow Backend API
 
-Node.js REST API server built with Express.
+Clean, modular Node.js REST API server built with Express.
+
+## Folder Structure
+
+```text
+Eduflow_backend/
+├── src/
+│   ├── controllers/      # Route request/response logic
+│   │   ├── authController.js
+│   │   └── courseController.js
+│   ├── middleware/       # Custom middlewares & error handling
+│   │   └── errorHandler.js
+│   ├── routes/           # API route definitions
+│   │   ├── authRoutes.js
+│   │   └── courseRoutes.js
+│   └── index.js          # Express server entry point
+├── .env.example
+├── package.json
+└── README.md
+```
 
 ## Getting Started
 
@@ -9,22 +28,28 @@ Node.js REST API server built with Express.
 npm install
 ```
 
-### 2. Environment Setup
-Create a `.env` file from `.env.example`:
-```bash
-cp .env.example .env
-```
-
-### 3. Run Development Server
+### 2. Run Development Server
 ```bash
 npm run dev
 ```
 
-The API server will run at `http://localhost:5000`.
+The server runs locally at `http://localhost:5000`.
 
-## Available Endpoints
+---
+
+## API Endpoints
+
+### 🔐 Authentication (`/api/auth`)
+
+| Method | Endpoint | Description | Body Parameters |
+|--------|----------|-------------|-----------------|
+| `POST` | `/api/auth/register` | Register a new user | `{ "name": "...", "email": "...", "password": "..." }` |
+| `POST` | `/api/auth/login` | User login | `{ "email": "...", "password": "..." }` |
+
+### 📚 Courses (`/api/courses`)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/api/health` | Server health check |
-| `GET` | `/api/v1/courses` | Fetch sample courses |
+| `GET` | `/api/courses` | Fetch all courses |
+| `GET` | `/api/courses/:id` | Fetch a single course by ID (e.g. `/api/courses/c1`) |
+| `POST` | `/api/courses` | Create a new course (`{ "title": "...", "instructor": "..." }`) |
