@@ -1,4 +1,5 @@
 // Auth Controller logic for Eduflow Login & Auth Flow
+const { generateToken } = require('../utils/generateToken');
 
 // @desc    Login user with Email & Password
 // @route   POST /api/auth/login
@@ -15,22 +16,24 @@ const loginUser = async (req, res, next) => {
       });
     }
 
-    // 2. Mock User check (Will connect to DB later)
-    // Example: check email format / password match
+    // 2. User info payload
+    const user = {
+      id: 'usr_eduflow_101',
+      name: 'Learner User',
+      email,
+      role: 'student',
+      avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Eduflow'
+    };
+
     const expiresIn = rememberMe ? '30d' : '1d';
+    const token = generateToken(user, expiresIn);
 
     res.status(200).json({
       success: true,
       message: 'Login successful',
-      token: `jwt_token_sample_${Date.now()}`,
+      token,
       expiresIn,
-      user: {
-        id: 'usr_eduflow_101',
-        name: 'Learner User',
-        email,
-        role: 'student',
-        avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Eduflow'
-      }
+      user
     });
   } catch (error) {
     next(error);
@@ -74,16 +77,20 @@ const socialLogin = async (req, res, next) => {
       });
     }
 
+    const user = {
+      id: `usr_${provider.toLowerCase()}_202`,
+      name: `${provider} User`,
+      email: `user@${provider.toLowerCase()}.com`,
+      role: 'student'
+    };
+
+    const token = generateToken(user, '30d');
+
     res.status(200).json({
       success: true,
       message: `Successfully authenticated via ${provider}`,
-      token: `jwt_token_${provider}_${Date.now()}`,
-      user: {
-        id: `usr_${provider}_202`,
-        name: `${provider} User`,
-        email: `user@${provider.toLowerCase()}.com`,
-        role: 'student'
-      }
+      token,
+      user
     });
   } catch (error) {
     next(error);
@@ -95,7 +102,8 @@ const socialLogin = async (req, res, next) => {
 // @access  Public
 const registerUser = async (req, res, next) => {
   try {
-    const { name, email, password } = req.body;
+    const name = req.body.name || req.body.fullName || req.body.username;
+    const { email, password } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({
@@ -104,15 +112,20 @@ const registerUser = async (req, res, next) => {
       });
     }
 
+    const user = {
+      id: 'usr_' + Date.now(),
+      name,
+      email,
+      role: 'student'
+    };
+
+    const token = generateToken(user, '30d');
+
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
-      user: {
-        id: 'usr_' + Date.now(),
-        name,
-        email,
-        role: 'student'
-      }
+      token,
+      user
     });
   } catch (error) {
     next(error);
