@@ -1,8 +1,16 @@
 const express = require('express');
 const router = express.Router();
-const { registerUser, loginUser } = require('../controllers/authController');
+const {
+  loginUser,
+  registerUser,
+  forgotPassword,
+  socialLogin
+} = require('../controllers/authController');
 
-router.post('/register', registerUser);
+// Routes matching the EduFlow Login Page UI
 router.post('/login', loginUser);
+router.post('/register', registerUser);
+router.post('/forgot-password', forgotPassword);
+router.post('/social-login', socialLogin);
 
 module.exports = router;
