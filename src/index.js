@@ -6,6 +6,7 @@ require('dotenv').config();
 
 const authRoutes = require('./routes/authRoutes');
 const courseRoutes = require('./routes/courseRoutes');
+const profileRoutes = require('./routes/profileRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -49,9 +50,19 @@ app.get('/', (req, res) => {
         socialLogin: 'POST /api/auth/social-login',
         register: 'POST /api/auth/register'
       },
+      profile: {
+        getProfile: 'GET /api/profile/me (Protected)',
+        updatePersonalInfo: 'PUT /api/profile/personal-info (Protected)',
+        updateGoals: 'PUT /api/profile/goals (Protected)',
+        getInterestsOptions: 'GET /api/profile/interests-options (Protected)',
+        updateInterests: 'PUT /api/profile/interests (Protected)',
+        updateSkills: 'PUT /api/profile/skills (Protected)',
+        uploadAvatar: 'POST /api/profile/avatar (Protected)',
+        completeOnboarding: 'POST /api/profile/complete (Protected)'
+      },
       courses: {
         getAll: 'GET /api/courses',
-        create: 'POST /api/courses'
+        create: 'POST /api/courses (Protected)'
       }
     }
   });
@@ -60,6 +71,7 @@ app.get('/', (req, res) => {
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
+app.use('/api/profile', profileRoutes);
 
 // Global Error Handler Middleware
 app.use(errorHandler);

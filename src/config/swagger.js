@@ -161,6 +161,7 @@ const options = {
         post: {
           tags: ['Courses'],
           summary: 'Create New Course',
+          security: [{ bearerAuth: [] }],
           requestBody: {
             required: true,
             content: {
@@ -179,6 +180,165 @@ const options = {
           },
           responses: {
             201: { description: 'Course created successfully' }
+          }
+        }
+      },
+      '/api/profile/me': {
+        get: {
+          tags: ['Profile & Onboarding'],
+          summary: 'Get current user profile & onboarding step',
+          security: [{ bearerAuth: [] }],
+          responses: {
+            200: { description: 'User profile retrieved successfully' },
+            401: { description: 'Unauthorized' }
+          }
+        }
+      },
+      '/api/profile/personal-info': {
+        put: {
+          tags: ['Profile & Onboarding'],
+          summary: 'Step 1: Save Personal Info',
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    fullName: { type: 'string', example: 'Alex Smith' },
+                    location: { type: 'string', example: 'San Francisco, CA' },
+                    bio: { type: 'string', example: 'Web developer & UX enthusiast' },
+                    avatarUrl: { type: 'string', example: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            200: { description: 'Personal info updated' },
+            401: { description: 'Unauthorized' }
+          }
+        }
+      },
+      '/api/profile/interests-options': {
+        get: {
+          tags: ['Profile & Onboarding'],
+          summary: 'Step 3: Get Available Interest Categories & Topics',
+          security: [{ bearerAuth: [] }],
+          responses: {
+            200: { description: 'List of interest options returned' }
+          }
+        }
+      },
+      '/api/profile/interests': {
+        put: {
+          tags: ['Profile & Onboarding'],
+          summary: 'Step 3: Save Selected Interest Topics',
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    interests: { type: 'array', items: { type: 'string' }, example: ['ai_ml', 'web_dev', 'graphic_design'] }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            200: { description: 'Interests saved' }
+          }
+        }
+      },
+      '/api/profile/goals': {
+        put: {
+          tags: ['Profile & Onboarding'],
+          summary: 'Step 2: Save Learning Goals',
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    goals: { type: 'array', items: { type: 'string' }, example: ['career_upskill', 'master_react'] }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            200: { description: 'Goals saved' }
+          }
+        }
+      },
+      '/api/profile/skills': {
+        put: {
+          tags: ['Profile & Onboarding'],
+          summary: 'Step 4: Save Skill Assessment Ratings',
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    skills: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          name: { type: 'string', example: 'Web Development' },
+                          level: { type: 'string', example: 'Intermediate' },
+                          rating: { type: 'number', example: 65 }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            200: { description: 'Skills saved' }
+          }
+        }
+      },
+      '/api/profile/avatar': {
+        post: {
+          tags: ['Profile & Onboarding'],
+          summary: 'Upload / Generate Avatar Picture',
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    seed: { type: 'string', example: 'EduflowUser1' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            200: { description: 'Avatar updated' }
+          }
+        }
+      },
+      '/api/profile/complete': {
+        post: {
+          tags: ['Profile & Onboarding'],
+          summary: 'Step 5: Complete Onboarding Flow',
+          security: [{ bearerAuth: [] }],
+          responses: {
+            200: { description: 'Onboarding completed' }
           }
         }
       }
