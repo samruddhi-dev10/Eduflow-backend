@@ -64,7 +64,7 @@ const options = {
                         type: 'object',
                         properties: {
                           id: { type: 'string', example: 'usr_eduflow_101' },
-                          name: { type: 'string', example: 'Learner User' },
+                          fullName: { type: 'string', example: 'Alex Smith' },
                           email: { type: 'string', example: 'name@company.com' },
                           role: { type: 'string', example: 'student' }
                         }
@@ -135,9 +135,9 @@ const options = {
               'application/json': {
                 schema: {
                   type: 'object',
-                  required: ['name', 'email', 'password'],
+                  required: ['fullName', 'email', 'password'],
                   properties: {
-                    name: { type: 'string', example: 'Alex Smith' },
+                    fullName: { type: 'string', example: 'Alex Smith' },
                     email: { type: 'string', example: 'alex@company.com' },
                     password: { type: 'string', example: 'securePassword123' }
                   }

@@ -17,9 +17,10 @@ const loginUser = async (req, res, next) => {
     }
 
     // 2. User info payload
+    const fullName = req.body.fullName || 'Alex Smith';
     const user = {
       id: 'usr_eduflow_101',
-      name: 'Learner User',
+      fullName,
       email,
       role: 'student',
       avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Eduflow'
@@ -79,7 +80,7 @@ const socialLogin = async (req, res, next) => {
 
     const user = {
       id: `usr_${provider.toLowerCase()}_202`,
-      name: `${provider} User`,
+      fullName: `${provider} User`,
       email: `user@${provider.toLowerCase()}.com`,
       role: 'student'
     };
@@ -102,19 +103,19 @@ const socialLogin = async (req, res, next) => {
 // @access  Public
 const registerUser = async (req, res, next) => {
   try {
-    const name = req.body.name || req.body.fullName || req.body.username;
+    const fullName = req.body.fullName || req.body.name || req.body.username;
     const { email, password } = req.body;
 
-    if (!name || !email || !password) {
+    if (!fullName || !email || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide name, email, and password'
+        message: 'Please provide fullName, email, and password'
       });
     }
 
     const user = {
       id: 'usr_' + Date.now(),
-      name,
+      fullName,
       email,
       role: 'student'
     };
