@@ -36,26 +36,8 @@ const INTEREST_CATEGORIES = [
   }
 ];
 
-// In-memory mock profile storage
-const userProfiles = {
-  usr_eduflow_101: {
-    id: 'usr_eduflow_101',
-    fullName: 'Alex Smith',
-    email: 'alex.learning@example.com',
-    location: 'San Francisco, CA',
-    bio: 'Passionate about web development and UI/UX design.',
-    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Eduflow',
-    onboardingStep: 1,
-    isOnboarded: false,
-    goals: ['career_upskill', "master_web_dev"],
-    interests: ['ai_ml', 'web_dev', 'graphic_design'],
-    skills: [
-      { id: 'sk_1', name: 'Web Development', level: 'Intermediate', rating: 65 },
-      { id: 'sk_2', name: 'Public Speaking', level: 'Novice', rating: 25 },
-      { id: 'sk_3', name: 'UI/UX Design', level: 'Expert', rating: 90 }
-    ]
-  }
-};
+// In-memory profile storage
+const userProfiles = {};
 
 /**
  * Get current user profile & onboarding status
@@ -63,18 +45,21 @@ const userProfiles = {
  */
 const getProfile = (req, res, next) => {
   try {
-    const userId = req.user?.id || 'usr_eduflow_101';
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
     let profile = userProfiles[userId];
 
     if (!profile) {
-      // Create default profile if not present
+      // Create profile for user
       profile = {
         id: userId,
-        fullName: req.user?.fullName,
-        email: req.user?.email || 'learner@example.com',
+        fullName: req.user?.fullName || (req.user?.email ? req.user.email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'User'),
+        email: req.user?.email || '',
         location: '',
         bio: '',
-        avatarUrl: req.user?.avatarUrl || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + userId,
+        avatarUrl: req.user?.avatarUrl || (userId ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}` : ''),
         onboardingStep: 1,
         isOnboarded: false,
         goals: [],
@@ -99,11 +84,14 @@ const getProfile = (req, res, next) => {
  */
 const updatePersonalInfo = (req, res, next) => {
   try {
-    const userId = req.user?.id || 'usr_eduflow_101';
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
     const { fullName, location, bio, avatarUrl } = req.body;
 
     if (!userProfiles[userId]) {
-      userProfiles[userId] = { id: userId, email: req.user?.email || 'learner@example.com' };
+      userProfiles[userId] = { id: userId, email: req.user?.email || '' };
     }
 
     const profile = userProfiles[userId];
@@ -129,7 +117,10 @@ const updatePersonalInfo = (req, res, next) => {
  */
 const updateGoals = (req, res, next) => {
   try {
-    const userId = req.user?.id || 'usr_eduflow_101';
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
     const { goals } = req.body;
 
     if (!Array.isArray(goals)) {
@@ -178,7 +169,10 @@ const getInterestOptions = (req, res, next) => {
  */
 const updateInterests = (req, res, next) => {
   try {
-    const userId = req.user?.id || 'usr_eduflow_101';
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
     const { interests } = req.body;
 
     if (!Array.isArray(interests)) {
@@ -212,7 +206,10 @@ const updateInterests = (req, res, next) => {
  */
 const updateSkills = (req, res, next) => {
   try {
-    const userId = req.user?.id || 'usr_eduflow_101';
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
     const { skills } = req.body;
 
     if (!Array.isArray(skills)) {
@@ -251,7 +248,10 @@ const updateSkills = (req, res, next) => {
  */
 const uploadAvatar = (req, res, next) => {
   try {
-    const userId = req.user?.id || 'usr_eduflow_101';
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
     const seed = req.body?.seed || req.body?.name || userId;
     const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(seed)}`;
 
@@ -275,7 +275,10 @@ const uploadAvatar = (req, res, next) => {
  */
 const completeOnboarding = (req, res, next) => {
   try {
-    const userId = req.user?.id || 'usr_eduflow_101';
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
 
     if (!userProfiles[userId]) {
       userProfiles[userId] = { id: userId };

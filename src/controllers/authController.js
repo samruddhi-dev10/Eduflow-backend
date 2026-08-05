@@ -17,13 +17,15 @@ const loginUser = async (req, res, next) => {
     }
 
     // 2. User info payload
-    const fullName = req.body.fullName;
+    const userId = 'usr_' + Date.now();
+    const derivedName = email ? email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'User';
+    const fullName = req.body.fullName || derivedName;
     const user = {
-      id: 'usr_eduflow_101',
+      id: userId,
       fullName,
       email,
       role: 'student',
-      avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Eduflow'
+      avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(fullName || email)}`
     };
 
     const expiresIn = rememberMe ? '30d' : '1d';

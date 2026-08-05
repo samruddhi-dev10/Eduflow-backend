@@ -63,8 +63,8 @@ const options = {
                       user: {
                         type: 'object',
                         properties: {
-                          id: { type: 'string', example: 'usr_eduflow_101' },
-                          fullName: { type: 'string', example: 'Alex Smith' },
+                          id: { type: 'string', example: 'usr_101' },
+                          fullName: { type: 'string', example: 'John Doe' },
                           email: { type: 'string', example: 'name@company.com' },
                           role: { type: 'string', example: 'student' }
                         }
@@ -137,8 +137,8 @@ const options = {
                   type: 'object',
                   required: ['fullName', 'email', 'password'],
                   properties: {
-                    fullName: { type: 'string', example: 'Alex Smith' },
-                    email: { type: 'string', example: 'alex@company.com' },
+                    fullName: { type: 'string', example: 'John Doe' },
+                    email: { type: 'string', example: 'user@company.com' },
                     password: { type: 'string', example: 'securePassword123' }
                   }
                 }
@@ -206,7 +206,7 @@ const options = {
                 schema: {
                   type: 'object',
                   properties: {
-                    fullName: { type: 'string', example: 'Alex Smith' },
+                    fullName: { type: 'string', example: 'John Doe' },
                     location: { type: 'string', example: 'San Francisco, CA' },
                     bio: { type: 'string', example: 'Web developer & UX enthusiast' },
                     avatarUrl: { type: 'string', example: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex' }
