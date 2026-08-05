@@ -1,9 +1,7 @@
 // Course Controller logic
 
-const courses = [
-  { id: 'c1', title: 'Fullstack Node.js & React', instructor: 'Samruddhi', duration: '8 weeks' },
-  { id: 'c2', title: 'Data Structures & Algorithms', instructor: 'Eduflow Team', duration: '10 weeks' }
-];
+// In-memory course storage
+const courses = [];
 
 // @desc    Get all courses
 // @route   GET /api/courses
@@ -47,8 +45,8 @@ const createCourse = (req, res, next) => {
     const newCourse = {
       id: `c${courses.length + 1}`,
       title,
-      instructor: instructor || 'Eduflow Instructor',
-      duration: duration || '4 weeks'
+      instructor: instructor || '',
+      duration: duration || ''
     };
     courses.push(newCourse);
     res.status(201).json({ success: true, data: newCourse });
