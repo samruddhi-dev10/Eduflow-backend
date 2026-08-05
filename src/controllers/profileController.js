@@ -70,7 +70,7 @@ const getProfile = (req, res, next) => {
       // Create default profile if not present
       profile = {
         id: userId,
-        fullName: req.user?.fullName || 'Alex Smith',
+        fullName: req.user?.fullName,
         email: req.user?.email || 'learner@example.com',
         location: '',
         bio: '',
