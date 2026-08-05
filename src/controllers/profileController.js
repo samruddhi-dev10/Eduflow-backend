@@ -1,4 +1,5 @@
 // Profile & Onboarding Controller for EduFlow
+const { getProfileByUserId, updateProfileByUserId } = require('../utils/userStore');
 
 // Pre-populated catalog of available interest topics matching UI mockups
 const INTEREST_CATEGORIES = [
@@ -36,9 +37,6 @@ const INTEREST_CATEGORIES = [
   }
 ];
 
-// In-memory profile storage
-const userProfiles = {};
-
 /**
  * Get current user profile & onboarding status
  * GET /api/profile/me
@@ -49,26 +47,8 @@ const getProfile = (req, res, next) => {
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
-    let profile = userProfiles[userId];
 
-    if (!profile) {
-      // Create profile for user
-      profile = {
-        id: userId,
-        fullName: req.user?.fullName || (req.user?.email ? req.user.email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'User'),
-        email: req.user?.email || '',
-        location: '',
-        bio: '',
-        avatarUrl: req.user?.avatarUrl || (userId ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}` : ''),
-        onboardingStep: 1,
-        isOnboarded: false,
-        goals: [],
-        interests: [],
-        skills: []
-      };
-      userProfiles[userId] = profile;
-    }
-
+    const profile = getProfileByUserId(userId);
     res.status(200).json({
       success: true,
       data: profile
@@ -79,7 +59,7 @@ const getProfile = (req, res, next) => {
 };
 
 /**
- * Update Step 1: Personal Info
+ * Step 1: Personal Info
  * PUT /api/profile/personal-info
  */
 const updatePersonalInfo = (req, res, next) => {
@@ -89,58 +69,20 @@ const updatePersonalInfo = (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
     const { fullName, location, bio, avatarUrl } = req.body;
+    const current = getProfileByUserId(userId);
 
-    if (!userProfiles[userId]) {
-      userProfiles[userId] = { id: userId, email: req.user?.email || '' };
-    }
+    const updates = {};
+    if (fullName) updates.fullName = fullName;
+    if (location !== undefined) updates.location = location;
+    if (bio !== undefined) updates.bio = bio;
+    if (avatarUrl) updates.avatarUrl = avatarUrl;
+    updates.onboardingStep = Math.max(current?.onboardingStep || 1, 2);
 
-    const profile = userProfiles[userId];
-    if (fullName) profile.fullName = fullName;
-    if (location !== undefined) profile.location = location;
-    if (bio !== undefined) profile.bio = bio;
-    if (avatarUrl) profile.avatarUrl = avatarUrl;
-    profile.onboardingStep = Math.max(profile.onboardingStep || 1, 2);
+    const profile = updateProfileByUserId(userId, updates);
 
     res.status(200).json({
       success: true,
       message: 'Personal info updated successfully',
-      data: profile
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-/**
- * Update Step 2: Learning Goals
- * PUT /api/profile/goals
- */
-const updateGoals = (req, res, next) => {
-  try {
-    const userId = req.user?.id;
-    if (!userId) {
-      return res.status(401).json({ success: false, message: 'Unauthorized' });
-    }
-    const { goals } = req.body;
-
-    if (!Array.isArray(goals)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Goals must be an array of strings'
-      });
-    }
-
-    if (!userProfiles[userId]) {
-      userProfiles[userId] = { id: userId };
-    }
-
-    const profile = userProfiles[userId];
-    profile.goals = goals;
-    profile.onboardingStep = Math.max(profile.onboardingStep || 1, 3);
-
-    res.status(200).json({
-      success: true,
-      message: 'Learning goals updated successfully',
       data: profile
     });
   } catch (error) {
@@ -164,7 +106,7 @@ const getInterestOptions = (req, res, next) => {
 };
 
 /**
- * Update Step 3: Areas of Interest
+ * Step 2: Areas of Interest
  * PUT /api/profile/interests
  */
 const updateInterests = (req, res, next) => {
@@ -182,13 +124,11 @@ const updateInterests = (req, res, next) => {
       });
     }
 
-    if (!userProfiles[userId]) {
-      userProfiles[userId] = { id: userId };
-    }
-
-    const profile = userProfiles[userId];
-    profile.interests = interests;
-    profile.onboardingStep = Math.max(profile.onboardingStep || 1, 4);
+    const current = getProfileByUserId(userId);
+    const profile = updateProfileByUserId(userId, {
+      interests,
+      onboardingStep: Math.max(current?.onboardingStep || 1, 3)
+    });
 
     res.status(200).json({
       success: true,
@@ -201,7 +141,42 @@ const updateInterests = (req, res, next) => {
 };
 
 /**
- * Update Step 4: Skill Assessment Ratings
+ * Step 3: Learning Goals
+ * PUT /api/profile/goals
+ */
+const updateGoals = (req, res, next) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+    const { goals } = req.body;
+
+    if (!Array.isArray(goals)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Goals must be an array of strings'
+      });
+    }
+
+    const current = getProfileByUserId(userId);
+    const profile = updateProfileByUserId(userId, {
+      goals,
+      onboardingStep: Math.max(current?.onboardingStep || 1, 4)
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Learning goals updated successfully',
+      data: profile
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Step 4: Skill Assessment Ratings
  * PUT /api/profile/skills
  */
 const updateSkills = (req, res, next) => {
@@ -219,22 +194,50 @@ const updateSkills = (req, res, next) => {
       });
     }
 
-    if (!userProfiles[userId]) {
-      userProfiles[userId] = { id: userId };
-    }
-
-    const profile = userProfiles[userId];
-    profile.skills = skills.map((s, idx) => ({
+    const formattedSkills = skills.map((s, idx) => ({
       id: s.id || `sk_${idx + 1}`,
       name: s.name,
       level: s.level || (s.rating > 75 ? 'Expert' : s.rating > 35 ? 'Intermediate' : 'Novice'),
       rating: s.rating ?? 50
     }));
-    profile.onboardingStep = Math.max(profile.onboardingStep || 1, 5);
+
+    const current = getProfileByUserId(userId);
+    const profile = updateProfileByUserId(userId, {
+      skills: formattedSkills,
+      onboardingStep: Math.max(current?.onboardingStep || 1, 5)
+    });
 
     res.status(200).json({
       success: true,
       message: 'Skills assessment updated successfully',
+      data: profile
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Step 5: Portfolio Information
+ * PUT /api/profile/portfolio
+ */
+const updatePortfolio = (req, res, next) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+    const { portfolio } = req.body;
+
+    const current = getProfileByUserId(userId);
+    const profile = updateProfileByUserId(userId, {
+      portfolio,
+      onboardingStep: Math.max(current?.onboardingStep || 1, 6)
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Portfolio updated successfully',
       data: profile
     });
   } catch (error) {
@@ -255,9 +258,7 @@ const uploadAvatar = (req, res, next) => {
     const seed = req.body?.seed || req.body?.name || userId;
     const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(seed)}`;
 
-    if (userProfiles[userId]) {
-      userProfiles[userId].avatarUrl = avatarUrl;
-    }
+    const profile = updateProfileByUserId(userId, { avatarUrl });
 
     res.status(200).json({
       success: true,
@@ -270,7 +271,7 @@ const uploadAvatar = (req, res, next) => {
 };
 
 /**
- * Step 5: Finalize & Complete Onboarding Review
+ * Step 6: Finalize & Complete Onboarding Review
  * POST /api/profile/complete
  */
 const completeOnboarding = (req, res, next) => {
@@ -280,13 +281,10 @@ const completeOnboarding = (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
 
-    if (!userProfiles[userId]) {
-      userProfiles[userId] = { id: userId };
-    }
-
-    const profile = userProfiles[userId];
-    profile.isOnboarded = true;
-    profile.onboardingStep = 5;
+    const profile = updateProfileByUserId(userId, {
+      isOnboarded: true,
+      onboardingStep: 6
+    });
 
     res.status(200).json({
       success: true,
@@ -301,10 +299,11 @@ const completeOnboarding = (req, res, next) => {
 module.exports = {
   getProfile,
   updatePersonalInfo,
-  updateGoals,
   getInterestOptions,
   updateInterests,
+  updateGoals,
   updateSkills,
+  updatePortfolio,
   uploadAvatar,
   completeOnboarding
 };

@@ -46,17 +46,19 @@ app.get('/', (req, res) => {
     documentation: {
       auth: {
         login: 'POST /api/auth/login',
+        register: 'POST /api/auth/register',
+        logout: 'POST /api/auth/logout',
         forgotPassword: 'POST /api/auth/forgot-password',
-        socialLogin: 'POST /api/auth/social-login',
-        register: 'POST /api/auth/register'
+        socialLogin: 'POST /api/auth/social-login'
       },
       profile: {
         getProfile: 'GET /api/profile/me (Protected)',
         updatePersonalInfo: 'PUT /api/profile/personal-info (Protected)',
-        updateGoals: 'PUT /api/profile/goals (Protected)',
         getInterestsOptions: 'GET /api/profile/interests-options (Protected)',
         updateInterests: 'PUT /api/profile/interests (Protected)',
+        updateGoals: 'PUT /api/profile/goals (Protected)',
         updateSkills: 'PUT /api/profile/skills (Protected)',
+        updatePortfolio: 'PUT /api/profile/portfolio (Protected)',
         uploadAvatar: 'POST /api/profile/avatar (Protected)',
         completeOnboarding: 'POST /api/profile/complete (Protected)'
       },

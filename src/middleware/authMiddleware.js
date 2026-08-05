@@ -1,4 +1,5 @@
 const { verifyToken } = require('../utils/generateToken');
+const { findUserById, getProfileByUserId } = require('../utils/userStore');
 
 /**
  * Protect routes - Verification middleware for JWT Bearer token in Authorization header
@@ -17,8 +18,20 @@ const protect = (req, res, next) => {
       // Verify token
       const decoded = verifyToken(token);
 
-      // Attach user payload to request
-      req.user = decoded;
+      // Attach updated user and profile payload to request
+      const existingUser = findUserById(decoded.id);
+      const profile = decoded.id ? getProfileByUserId(decoded.id) : null;
+
+      req.user = existingUser ? {
+        id: existingUser.id,
+        fullName: existingUser.fullName,
+        email: existingUser.email,
+        role: existingUser.role,
+        avatarUrl: existingUser.avatarUrl,
+        isOnboarded: profile ? profile.isOnboarded : false,
+        onboardingStep: profile ? profile.onboardingStep : 1
+      } : decoded;
+
       return next();
     } catch (error) {
       console.error('❌ Auth Error:', error.message);
