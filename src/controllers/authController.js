@@ -1,5 +1,10 @@
 // Auth Controller logic for Eduflow Login & Auth Flow
 const { generateToken } = require('../utils/generateToken');
+const {
+  findUserByEmail,
+  createUser,
+  getProfileByUserId
+} = require('../utils/userStore');
 
 // @desc    Login user with Email & Password
 // @route   POST /api/auth/login
@@ -8,7 +13,7 @@ const loginUser = async (req, res, next) => {
   try {
     const { email, password, rememberMe } = req.body;
 
-    // 1. Validation
+    // 1. Input Validation
     if (!email || !password) {
       return res.status(400).json({
         success: false,
@@ -16,27 +21,44 @@ const loginUser = async (req, res, next) => {
       });
     }
 
-    // 2. User info payload
-    const userId = 'usr_' + Date.now();
-    const derivedName = email ? email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'User';
-    const fullName = req.body.fullName || derivedName;
-    const user = {
-      id: userId,
-      fullName,
-      email,
-      role: 'student',
-      avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(fullName || email)}`
+    // 2. Search user by email
+    const existingUser = findUserByEmail(email);
+    if (!existingUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'Account not found. Please sign up first.'
+      });
+    }
+
+    // 3. Password Verification
+    if (existingUser.password !== password) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password.'
+      });
+    }
+
+    // 4. Fetch associated user profile & onboarding state
+    const profile = getProfileByUserId(existingUser.id);
+    const userPayload = {
+      id: existingUser.id,
+      fullName: existingUser.fullName,
+      email: existingUser.email,
+      role: existingUser.role,
+      avatarUrl: existingUser.avatarUrl,
+      isOnboarded: profile ? profile.isOnboarded : false,
+      onboardingStep: profile ? profile.onboardingStep : 1
     };
 
     const expiresIn = rememberMe ? '30d' : '1d';
-    const token = generateToken(user, expiresIn);
+    const token = generateToken({ id: existingUser.id, email: existingUser.email }, expiresIn);
 
     res.status(200).json({
       success: true,
       message: 'Login successful',
       token,
       expiresIn,
-      user
+      user: userPayload
     });
   } catch (error) {
     next(error);
@@ -54,6 +76,14 @@ const forgotPassword = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         message: 'Please provide your registered email address'
+      });
+    }
+
+    const existingUser = findUserByEmail(email);
+    if (!existingUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'Account not found with this email address.'
       });
     }
 
@@ -80,20 +110,37 @@ const socialLogin = async (req, res, next) => {
       });
     }
 
-    const user = {
-      id: `usr_${provider.toLowerCase()}_202`,
-      fullName: `${provider} User`,
-      email: `user@${provider.toLowerCase()}.com`,
-      role: 'student'
+    const email = (req.body.email || `user@${provider.toLowerCase()}.com`).toLowerCase();
+    let existingUser = findUserByEmail(email);
+
+    if (!existingUser) {
+      const created = createUser({
+        fullName: req.body.fullName || `${provider} User`,
+        email,
+        password: `oauth_${providerToken.slice(0, 8)}`,
+        role: 'student'
+      });
+      existingUser = created.user;
+    }
+
+    const profile = getProfileByUserId(existingUser.id);
+    const userPayload = {
+      id: existingUser.id,
+      fullName: existingUser.fullName,
+      email: existingUser.email,
+      role: existingUser.role,
+      avatarUrl: existingUser.avatarUrl,
+      isOnboarded: profile ? profile.isOnboarded : false,
+      onboardingStep: profile ? profile.onboardingStep : 1
     };
 
-    const token = generateToken(user, '30d');
+    const token = generateToken({ id: existingUser.id, email: existingUser.email }, '30d');
 
     res.status(200).json({
       success: true,
       message: `Successfully authenticated via ${provider}`,
       token,
-      user
+      user: userPayload
     });
   } catch (error) {
     next(error);
@@ -115,20 +162,53 @@ const registerUser = async (req, res, next) => {
       });
     }
 
-    const user = {
-      id: 'usr_' + Date.now(),
+    // Prevent Duplicate Signup
+    const existingUser = findUserByEmail(email);
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message: 'Email already registered.'
+      });
+    }
+
+    const { user, profile } = createUser({
       fullName,
       email,
+      password,
       role: 'student'
+    });
+
+    const userPayload = {
+      id: user.id,
+      fullName: user.fullName,
+      email: user.email,
+      role: user.role,
+      avatarUrl: user.avatarUrl,
+      isOnboarded: profile.isOnboarded,
+      onboardingStep: profile.onboardingStep
     };
 
-    const token = generateToken(user, '30d');
+    const token = generateToken({ id: user.id, email: user.email }, '30d');
 
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
       token,
-      user
+      user: userPayload
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Logout user session
+// @route   POST /api/auth/logout
+// @access  Public / Private
+const logoutUser = async (req, res, next) => {
+  try {
+    res.status(200).json({
+      success: true,
+      message: 'Logged out successfully'
     });
   } catch (error) {
     next(error);
@@ -139,5 +219,6 @@ module.exports = {
   loginUser,
   forgotPassword,
   socialLogin,
-  registerUser
+  registerUser,
+  logoutUser
 };

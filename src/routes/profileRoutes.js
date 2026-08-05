@@ -4,10 +4,11 @@ const { protect } = require('../middleware/authMiddleware');
 const {
   getProfile,
   updatePersonalInfo,
-  updateGoals,
   getInterestOptions,
   updateInterests,
+  updateGoals,
   updateSkills,
+  updatePortfolio,
   uploadAvatar,
   completeOnboarding
 } = require('../controllers/profileController');
@@ -16,9 +17,10 @@ const {
 router.get('/me', protect, getProfile);
 router.put('/personal-info', protect, updatePersonalInfo);
 router.get('/interests-options', protect, getInterestOptions);
-router.put('/goals', protect, updateGoals);
 router.put('/interests', protect, updateInterests);
+router.put('/goals', protect, updateGoals);
 router.put('/skills', protect, updateSkills);
+router.put('/portfolio', protect, updatePortfolio);
 router.post('/avatar', protect, uploadAvatar);
 router.post('/complete', protect, completeOnboarding);
 
