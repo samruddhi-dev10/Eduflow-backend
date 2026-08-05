@@ -17,7 +17,7 @@ const loginUser = async (req, res, next) => {
     }
 
     // 2. User info payload
-    const fullName = req.body.fullName || 'Alex Smith';
+    const fullName = req.body.fullName;
     const user = {
       id: 'usr_eduflow_101',
       fullName,
