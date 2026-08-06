@@ -7,12 +7,14 @@ const {
   socialLogin,
   logoutUser
 } = require('../controllers/authController');
+const { authLimiter } = require('../middleware/rateLimiter');
+const { validateLogin, validateRegister } = require('../middleware/validators');
 
 // Routes matching the EduFlow Login Page UI
-router.post('/login', loginUser);
-router.post('/register', registerUser);
-router.post('/forgot-password', forgotPassword);
-router.post('/social-login', socialLogin);
+router.post('/login', authLimiter, validateLogin, loginUser);
+router.post('/register', authLimiter, validateRegister, registerUser);
+router.post('/forgot-password', authLimiter, forgotPassword);
+router.post('/social-login', authLimiter, socialLogin);
 router.post('/logout', logoutUser);
 
 module.exports = router;

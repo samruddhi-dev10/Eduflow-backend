@@ -4,7 +4,7 @@ const { findUserById, getProfileByUserId } = require('../utils/userStore');
 /**
  * Protect routes - Verification middleware for JWT Bearer token in Authorization header
  */
-const protect = (req, res, next) => {
+const protect = async (req, res, next) => {
   let token;
 
   if (
@@ -19,8 +19,8 @@ const protect = (req, res, next) => {
       const decoded = verifyToken(token);
 
       // Attach updated user and profile payload to request
-      const existingUser = findUserById(decoded.id);
-      const profile = decoded.id ? getProfileByUserId(decoded.id) : null;
+      const existingUser = await findUserById(decoded.id);
+      const profile = decoded.id ? await getProfileByUserId(decoded.id) : null;
 
       req.user = existingUser ? {
         id: existingUser.id,

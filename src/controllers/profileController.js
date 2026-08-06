@@ -41,14 +41,14 @@ const INTEREST_CATEGORIES = [
  * Get current user profile & onboarding status
  * GET /api/profile/me
  */
-const getProfile = (req, res, next) => {
+const getProfile = async (req, res, next) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
 
-    const profile = getProfileByUserId(userId);
+    const profile = await getProfileByUserId(userId);
     res.status(200).json({
       success: true,
       data: profile
@@ -62,14 +62,14 @@ const getProfile = (req, res, next) => {
  * Step 1: Personal Info
  * PUT /api/profile/personal-info
  */
-const updatePersonalInfo = (req, res, next) => {
+const updatePersonalInfo = async (req, res, next) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
     const { fullName, location, bio, avatarUrl } = req.body;
-    const current = getProfileByUserId(userId);
+    const current = await getProfileByUserId(userId);
 
     const updates = {};
     if (fullName) updates.fullName = fullName;
@@ -78,7 +78,7 @@ const updatePersonalInfo = (req, res, next) => {
     if (avatarUrl) updates.avatarUrl = avatarUrl;
     updates.onboardingStep = Math.max(current?.onboardingStep || 1, 2);
 
-    const profile = updateProfileByUserId(userId, updates);
+    const profile = await updateProfileByUserId(userId, updates);
 
     res.status(200).json({
       success: true,
@@ -94,7 +94,7 @@ const updatePersonalInfo = (req, res, next) => {
  * Get Available Interest Options & Categories
  * GET /api/profile/interests-options
  */
-const getInterestOptions = (req, res, next) => {
+const getInterestOptions = async (req, res, next) => {
   try {
     res.status(200).json({
       success: true,
@@ -109,7 +109,7 @@ const getInterestOptions = (req, res, next) => {
  * Step 2: Areas of Interest
  * PUT /api/profile/interests
  */
-const updateInterests = (req, res, next) => {
+const updateInterests = async (req, res, next) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -124,8 +124,8 @@ const updateInterests = (req, res, next) => {
       });
     }
 
-    const current = getProfileByUserId(userId);
-    const profile = updateProfileByUserId(userId, {
+    const current = await getProfileByUserId(userId);
+    const profile = await updateProfileByUserId(userId, {
       interests,
       onboardingStep: Math.max(current?.onboardingStep || 1, 3)
     });
@@ -144,7 +144,7 @@ const updateInterests = (req, res, next) => {
  * Step 3: Learning Goals
  * PUT /api/profile/goals
  */
-const updateGoals = (req, res, next) => {
+const updateGoals = async (req, res, next) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -159,8 +159,8 @@ const updateGoals = (req, res, next) => {
       });
     }
 
-    const current = getProfileByUserId(userId);
-    const profile = updateProfileByUserId(userId, {
+    const current = await getProfileByUserId(userId);
+    const profile = await updateProfileByUserId(userId, {
       goals,
       onboardingStep: Math.max(current?.onboardingStep || 1, 4)
     });
@@ -179,7 +179,7 @@ const updateGoals = (req, res, next) => {
  * Step 4: Skill Assessment Ratings
  * PUT /api/profile/skills
  */
-const updateSkills = (req, res, next) => {
+const updateSkills = async (req, res, next) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -201,8 +201,8 @@ const updateSkills = (req, res, next) => {
       rating: s.rating ?? 50
     }));
 
-    const current = getProfileByUserId(userId);
-    const profile = updateProfileByUserId(userId, {
+    const current = await getProfileByUserId(userId);
+    const profile = await updateProfileByUserId(userId, {
       skills: formattedSkills,
       onboardingStep: Math.max(current?.onboardingStep || 1, 5)
     });
@@ -221,7 +221,7 @@ const updateSkills = (req, res, next) => {
  * Step 5: Portfolio Information
  * PUT /api/profile/portfolio
  */
-const updatePortfolio = (req, res, next) => {
+const updatePortfolio = async (req, res, next) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -229,8 +229,8 @@ const updatePortfolio = (req, res, next) => {
     }
     const { portfolio } = req.body;
 
-    const current = getProfileByUserId(userId);
-    const profile = updateProfileByUserId(userId, {
+    const current = await getProfileByUserId(userId);
+    const profile = await updateProfileByUserId(userId, {
       portfolio,
       onboardingStep: Math.max(current?.onboardingStep || 1, 6)
     });
@@ -249,7 +249,7 @@ const updatePortfolio = (req, res, next) => {
  * Upload or Generate Avatar Picture
  * POST /api/profile/avatar
  */
-const uploadAvatar = (req, res, next) => {
+const uploadAvatar = async (req, res, next) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -258,7 +258,7 @@ const uploadAvatar = (req, res, next) => {
     const seed = req.body?.seed || req.body?.name || userId;
     const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(seed)}`;
 
-    const profile = updateProfileByUserId(userId, { avatarUrl });
+    const profile = await updateProfileByUserId(userId, { avatarUrl });
 
     res.status(200).json({
       success: true,
@@ -274,14 +274,14 @@ const uploadAvatar = (req, res, next) => {
  * Step 6: Finalize & Complete Onboarding Review
  * POST /api/profile/complete
  */
-const completeOnboarding = (req, res, next) => {
+const completeOnboarding = async (req, res, next) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
 
-    const profile = updateProfileByUserId(userId, {
+    const profile = await updateProfileByUserId(userId, {
       isOnboarded: true,
       onboardingStep: 6
     });

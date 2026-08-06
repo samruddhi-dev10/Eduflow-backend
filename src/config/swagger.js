@@ -150,6 +150,98 @@ const options = {
           }
         }
       },
+      '/api/dashboard': {
+        get: {
+          tags: ['Dashboard'],
+          summary: 'Get Composite Student Dashboard Payload',
+          security: [{ bearerAuth: [] }],
+          responses: {
+            200: { description: 'Complete dashboard object returned' },
+            401: { description: 'Unauthorized' }
+          }
+        }
+      },
+      '/api/dashboard/stats': {
+        get: {
+          tags: ['Dashboard'],
+          summary: 'Get User Learning Streak & Hours Stats',
+          security: [{ bearerAuth: [] }],
+          responses: {
+            200: { description: 'Dashboard stats returned' },
+            401: { description: 'Unauthorized' }
+          }
+        }
+      },
+      '/api/dashboard/live-classes': {
+        get: {
+          tags: ['Dashboard'],
+          summary: 'Get List of Upcoming Live Classes',
+          security: [{ bearerAuth: [] }],
+          responses: {
+            200: { description: 'Live classes array returned' }
+          }
+        }
+      },
+      '/api/dashboard/live-classes/{id}/reminder': {
+        post: {
+          tags: ['Dashboard'],
+          summary: 'Toggle Reminder for a Live Class',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'id',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' },
+              example: 'lc_1'
+            }
+          ],
+          responses: {
+            200: { description: 'Reminder state toggled' },
+            404: { description: 'Live class not found' }
+          }
+        }
+      },
+      '/api/dashboard/continue-learning': {
+        get: {
+          tags: ['Dashboard'],
+          summary: 'Get In-Progress Courses & Progress Percentage',
+          security: [{ bearerAuth: [] }],
+          responses: {
+            200: { description: 'In-progress courses list returned' }
+          }
+        }
+      },
+      '/api/dashboard/recommended': {
+        get: {
+          tags: ['Dashboard'],
+          summary: 'Get Recommended Courses List',
+          security: [{ bearerAuth: [] }],
+          responses: {
+            200: { description: 'Recommended courses returned' }
+          }
+        }
+      },
+      '/api/dashboard/module-explorer': {
+        get: {
+          tags: ['Dashboard'],
+          summary: 'Get Module Explorer Navigation',
+          security: [{ bearerAuth: [] }],
+          responses: {
+            200: { description: 'Module navigation returned' }
+          }
+        }
+      },
+      '/api/dashboard/download-resources': {
+        get: {
+          tags: ['Dashboard'],
+          summary: 'Get Course Learning Resource Download Link',
+          security: [{ bearerAuth: [] }],
+          responses: {
+            200: { description: 'Resource download payload returned' }
+          }
+        }
+      },
       '/api/courses': {
         get: {
           tags: ['Courses'],
