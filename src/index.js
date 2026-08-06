@@ -1,18 +1,26 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
+const { connectDB } = require('./config/db');
+const { apiLimiter } = require('./middleware/rateLimiter');
 require('dotenv').config();
 
 const authRoutes = require('./routes/authRoutes');
 const courseRoutes = require('./routes/courseRoutes');
 const profileRoutes = require('./routes/profileRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
+// Security Headers & Rate Limiting
+app.use(helmet());
+app.use('/api/', apiLimiter);
+
+// Allowed Origins for CORS
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
@@ -23,7 +31,7 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps, curl, postman)
+    // Allow requests with no origin (mobile apps, curl, Postman)
     if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
       callback(null, true);
     } else {
@@ -32,6 +40,7 @@ app.use(cors({
   },
   credentials: true
 }));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -62,6 +71,16 @@ app.get('/', (req, res) => {
         uploadAvatar: 'POST /api/profile/avatar (Protected)',
         completeOnboarding: 'POST /api/profile/complete (Protected)'
       },
+      dashboard: {
+        getDashboard: 'GET /api/dashboard (Protected)',
+        getStats: 'GET /api/dashboard/stats (Protected)',
+        getLiveClasses: 'GET /api/dashboard/live-classes (Protected)',
+        toggleReminder: 'POST /api/dashboard/live-classes/:id/reminder (Protected)',
+        getContinueLearning: 'GET /api/dashboard/continue-learning (Protected)',
+        getRecommended: 'GET /api/dashboard/recommended (Protected)',
+        getModuleExplorer: 'GET /api/dashboard/module-explorer (Protected)',
+        downloadResources: 'GET /api/dashboard/download-resources (Protected)'
+      },
       courses: {
         getAll: 'GET /api/courses',
         create: 'POST /api/courses (Protected)'
@@ -74,6 +93,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // Global Error Handler Middleware
 app.use(errorHandler);
@@ -92,13 +112,19 @@ const getLocalIp = () => {
   return 'localhost';
 };
 
-// Start Server
-app.listen(PORT, '0.0.0.0', () => {
-  const localIp = getLocalIp();
-  console.log(`🚀 Server running on:`);
-  console.log(`   - Local:   http://localhost:${PORT}`);
-  console.log(`   - Network: http://${localIp}:${PORT}`);
-  console.log(`📑 Interactive Swagger Docs available at:`);
-  console.log(`   - Local:   http://localhost:${PORT}/api-docs`);
-  console.log(`   - Network: http://${localIp}:${PORT}/api-docs`);
-});
+// Start Server after connecting to Database
+const startServer = async () => {
+  await connectDB();
+
+  app.listen(PORT, '0.0.0.0', () => {
+    const localIp = getLocalIp();
+    console.log(`🚀 Server running on:`);
+    console.log(`   - Local:   http://localhost:${PORT}`);
+    console.log(`   - Network: http://${localIp}:${PORT}`);
+    console.log(`📑 Interactive Swagger Docs available at:`);
+    console.log(`   - Local:   http://localhost:${PORT}/api-docs`);
+    console.log(`   - Network: http://${localIp}:${PORT}/api-docs`);
+  });
+};
+
+startServer();

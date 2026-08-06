@@ -3,7 +3,8 @@ const { generateToken } = require('../utils/generateToken');
 const {
   findUserByEmail,
   createUser,
-  getProfileByUserId
+  getProfileByUserId,
+  verifyUserPassword
 } = require('../utils/userStore');
 
 // @desc    Login user with Email & Password
@@ -22,7 +23,7 @@ const loginUser = async (req, res, next) => {
     }
 
     // 2. Search user by email
-    const existingUser = findUserByEmail(email);
+    const existingUser = await findUserByEmail(email);
     if (!existingUser) {
       return res.status(404).json({
         success: false,
@@ -30,8 +31,9 @@ const loginUser = async (req, res, next) => {
       });
     }
 
-    // 3. Password Verification
-    if (existingUser.password !== password) {
+    // 3. Password Verification (Bcrypt comparison)
+    const isMatch = await verifyUserPassword(existingUser, password);
+    if (!isMatch) {
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password.'
@@ -39,7 +41,7 @@ const loginUser = async (req, res, next) => {
     }
 
     // 4. Fetch associated user profile & onboarding state
-    const profile = getProfileByUserId(existingUser.id);
+    const profile = await getProfileByUserId(existingUser.id);
     const userPayload = {
       id: existingUser.id,
       fullName: existingUser.fullName,
@@ -79,7 +81,7 @@ const forgotPassword = async (req, res, next) => {
       });
     }
 
-    const existingUser = findUserByEmail(email);
+    const existingUser = await findUserByEmail(email);
     if (!existingUser) {
       return res.status(404).json({
         success: false,
@@ -111,10 +113,10 @@ const socialLogin = async (req, res, next) => {
     }
 
     const email = (req.body.email || `user@${provider.toLowerCase()}.com`).toLowerCase();
-    let existingUser = findUserByEmail(email);
+    let existingUser = await findUserByEmail(email);
 
     if (!existingUser) {
-      const created = createUser({
+      const created = await createUser({
         fullName: req.body.fullName || `${provider} User`,
         email,
         password: `oauth_${providerToken.slice(0, 8)}`,
@@ -123,7 +125,7 @@ const socialLogin = async (req, res, next) => {
       existingUser = created.user;
     }
 
-    const profile = getProfileByUserId(existingUser.id);
+    const profile = await getProfileByUserId(existingUser.id);
     const userPayload = {
       id: existingUser.id,
       fullName: existingUser.fullName,
@@ -163,7 +165,7 @@ const registerUser = async (req, res, next) => {
     }
 
     // Prevent Duplicate Signup
-    const existingUser = findUserByEmail(email);
+    const existingUser = await findUserByEmail(email);
     if (existingUser) {
       return res.status(409).json({
         success: false,
@@ -171,7 +173,7 @@ const registerUser = async (req, res, next) => {
       });
     }
 
-    const { user, profile } = createUser({
+    const { user, profile } = await createUser({
       fullName,
       email,
       password,
