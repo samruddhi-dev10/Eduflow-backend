@@ -1,44 +1,49 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/db');
 
-const courseSchema = new mongoose.Schema(
+const Course = sequelize.define(
+  'Course',
   {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true
+    },
     title: {
-      type: String,
-      required: [true, 'Course title is required'],
-      trim: true
+      type: DataTypes.STRING,
+      allowNull: false
     },
     description: {
-      type: String,
-      default: ''
+      type: DataTypes.TEXT,
+      defaultValue: ''
     },
     category: {
-      type: String,
-      default: 'General'
+      type: DataTypes.STRING,
+      defaultValue: 'General'
     },
     level: {
-      type: String,
-      enum: ['Beginner', 'Intermediate', 'Advanced'],
-      default: 'Beginner'
+      type: DataTypes.ENUM('Beginner', 'Intermediate', 'Advanced'),
+      defaultValue: 'Beginner'
     },
     instructor: {
-      type: String,
-      default: 'Eduflow Instructor'
+      type: DataTypes.STRING,
+      defaultValue: 'Eduflow Instructor'
     },
     thumbnail: {
-      type: String,
-      default: ''
+      type: DataTypes.STRING,
+      defaultValue: ''
     },
     totalLessons: {
-      type: Number,
-      default: 10
+      type: DataTypes.INTEGER,
+      defaultValue: 10
     },
     rating: {
-      type: Number,
-      default: 4.8
+      type: DataTypes.FLOAT,
+      defaultValue: 4.8
     },
     studentsCount: {
-      type: String,
-      default: '1k students'
+      type: DataTypes.STRING,
+      defaultValue: '1k students'
     }
   },
   {
@@ -46,4 +51,4 @@ const courseSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model('Course', courseSchema);
+module.exports = Course;
