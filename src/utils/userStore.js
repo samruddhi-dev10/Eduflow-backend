@@ -1,6 +1,6 @@
 /**
  * Data Access Layer for Users, Profiles, and Dashboard Data
- * Supports MongoDB (via Mongoose models) with transparent In-Memory fallback mode.
+ * Supports SQL Database (via Sequelize models) with transparent In-Memory fallback mode.
  */
 
 const bcrypt = require('bcryptjs');
@@ -42,10 +42,10 @@ const findUserByEmail = async (email) => {
   const normalizedEmail = email.toLowerCase().trim();
 
   if (isDBConnected()) {
-    const doc = await User.findOne({ email: normalizedEmail });
+    const doc = await User.findOne({ where: { email: normalizedEmail } });
     if (!doc) return null;
     return {
-      id: doc._id.toString(),
+      id: doc.id,
       fullName: doc.fullName,
       email: doc.email,
       password: doc.password,
@@ -66,10 +66,10 @@ const findUserById = async (id) => {
 
   if (isDBConnected()) {
     try {
-      const doc = await User.findById(id);
+      const doc = await User.findByPk(id);
       if (!doc) return null;
       return {
-        id: doc._id.toString(),
+        id: doc.id,
         fullName: doc.fullName,
         email: doc.email,
         password: doc.password,
@@ -93,7 +93,7 @@ const createUser = async ({ fullName, email, password, role = 'student' }) => {
   const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(fullName || normalizedEmail)}`;
 
   if (isDBConnected()) {
-    const existing = await User.findOne({ email: normalizedEmail });
+    const existing = await User.findOne({ where: { email: normalizedEmail } });
     if (existing) throw new Error('User already exists');
 
     const newUser = await User.create({
@@ -105,18 +105,18 @@ const createUser = async ({ fullName, email, password, role = 'student' }) => {
     });
 
     const newProfile = await Profile.create({
-      userId: newUser._id,
+      userId: newUser.id,
       isOnboarded: false,
       onboardingStep: 1
     });
 
     await Dashboard.create({
-      userId: newUser._id,
+      userId: newUser.id,
       ...createDefaultDashboardData()
     });
 
     const userObj = {
-      id: newUser._id.toString(),
+      id: newUser.id,
       fullName: newUser.fullName,
       email: newUser.email,
       password: newUser.password,
@@ -126,7 +126,7 @@ const createUser = async ({ fullName, email, password, role = 'student' }) => {
     };
 
     const profileObj = {
-      id: newUser._id.toString(),
+      id: newUser.id,
       fullName: newUser.fullName,
       email: newUser.email,
       avatarUrl: newUser.avatarUrl,
@@ -188,8 +188,8 @@ const getProfileByUserId = async (userId) => {
 
   if (isDBConnected()) {
     try {
-      let doc = await Profile.findOne({ userId });
-      const userDoc = await User.findById(userId);
+      let doc = await Profile.findOne({ where: { userId } });
+      const userDoc = await User.findByPk(userId);
 
       if (!doc && userDoc) {
         doc = await Profile.create({
@@ -251,8 +251,13 @@ const getProfileByUserId = async (userId) => {
 const updateProfileByUserId = async (userId, updates) => {
   if (isDBConnected()) {
     try {
-      const doc = await Profile.findOneAndUpdate({ userId }, { $set: updates }, { new: true, upsert: true });
-      const userDoc = await User.findById(userId);
+      let doc = await Profile.findOne({ where: { userId } });
+      if (!doc) {
+        doc = await Profile.create({ userId, ...updates });
+      } else {
+        await doc.update(updates);
+      }
+      const userDoc = await User.findByPk(userId);
       return {
         id: userId,
         fullName: userDoc ? userDoc.fullName : '',
@@ -289,7 +294,7 @@ const getDashboardDataByUserId = async (userId) => {
 
   if (isDBConnected()) {
     try {
-      let doc = await Dashboard.findOne({ userId });
+      let doc = await Dashboard.findOne({ where: { userId } });
       if (!doc) {
         doc = await Dashboard.create({
           userId,
@@ -353,7 +358,7 @@ const getDashboardDataByUserId = async (userId) => {
 const toggleLiveClassReminderByUserId = async (userId, classId) => {
   if (isDBConnected()) {
     try {
-      let doc = await Dashboard.findOne({ userId });
+      let doc = await Dashboard.findOne({ where: { userId } });
       if (!doc) {
         doc = await Dashboard.create({
           userId,
@@ -361,11 +366,12 @@ const toggleLiveClassReminderByUserId = async (userId, classId) => {
         });
       }
 
-      const liveClass = doc.liveClasses.find(c => c.id === classId);
+      const liveClasses = Array.isArray(doc.liveClasses) ? [...doc.liveClasses] : [];
+      const liveClass = liveClasses.find(c => c.id === classId);
       if (!liveClass) return null;
 
       liveClass.isReminderSet = !liveClass.isReminderSet;
-      await doc.save();
+      await doc.update({ liveClasses });
       return liveClass;
     } catch (e) {
       return null;
@@ -391,7 +397,7 @@ const toggleLiveClassReminderByUserId = async (userId, classId) => {
  */
 const verifyUserPassword = async (user, enteredPassword) => {
   if (!user || !enteredPassword) return false;
-  if (user.password && user.password.startsWith('$2a$') || user.password.startsWith('$2b$')) {
+  if (user.password && (user.password.startsWith('$2a$') || user.password.startsWith('$2b$'))) {
     return await bcrypt.compare(enteredPassword, user.password);
   }
   return user.password === enteredPassword;

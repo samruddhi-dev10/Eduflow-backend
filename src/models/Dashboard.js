@@ -1,59 +1,46 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/db');
 
-const dashboardSchema = new mongoose.Schema(
+const Dashboard = sequelize.define(
+  'Dashboard',
   {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true
+    },
     userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
+      type: DataTypes.UUID,
+      allowNull: false,
       unique: true
     },
     stats: {
-      currentStreakDays: { type: Number, default: 12 },
-      timeLearnedHours: { type: Number, default: 24.5 },
-      coursesCompleted: { type: Number, default: 8 }
+      type: DataTypes.JSON,
+      defaultValue: {
+        currentStreakDays: 12,
+        timeLearnedHours: 24.5,
+        coursesCompleted: 8
+      }
     },
-    liveClasses: [
-      {
-        id: String,
-        timeLabel: String,
-        title: String,
-        instructor: String,
-        action: String,
-        meetingUrl: String,
-        isReminderSet: { type: Boolean, default: false }
-      }
-    ],
-    continueLearning: [
-      {
-        id: String,
-        courseId: String,
-        title: String,
-        moduleLabel: String,
-        progressPercent: Number,
-        lessonsLeft: Number,
-        totalLessons: Number,
-        completedLessons: Number,
-        thumbnail: String
-      }
-    ],
-    recommended: [
-      {
-        id: String,
-        title: String,
-        rating: Number,
-        studentsCount: String,
-        category: String,
-        level: String,
-        icon: String
-      }
-    ],
+    liveClasses: {
+      type: DataTypes.JSON,
+      defaultValue: []
+    },
+    continueLearning: {
+      type: DataTypes.JSON,
+      defaultValue: []
+    },
+    recommended: {
+      type: DataTypes.JSON,
+      defaultValue: []
+    },
     moduleExplorer: {
-      title: { type: String, default: 'Module Explorer' },
-      navigation: [
-        { id: String, title: String, active: Boolean }
-      ],
-      resourceDownloadUrl: { type: String, default: '/api/dashboard/download-resources' }
+      type: DataTypes.JSON,
+      defaultValue: {
+        title: 'Module Explorer',
+        navigation: [],
+        resourceDownloadUrl: '/api/dashboard/download-resources'
+      }
     }
   },
   {
@@ -61,4 +48,4 @@ const dashboardSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model('Dashboard', dashboardSchema);
+module.exports = Dashboard;

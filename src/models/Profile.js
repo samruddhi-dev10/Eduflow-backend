@@ -1,48 +1,54 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/db');
 
-const profileSchema = new mongoose.Schema(
+const Profile = sequelize.define(
+  'Profile',
   {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true
+    },
     userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
+      type: DataTypes.UUID,
+      allowNull: false,
       unique: true
     },
     isOnboarded: {
-      type: Boolean,
-      default: false
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
     },
     onboardingStep: {
-      type: Number,
-      default: 1
+      type: DataTypes.INTEGER,
+      defaultValue: 1
     },
     primaryGoal: {
-      type: String,
-      default: ''
+      type: DataTypes.STRING,
+      defaultValue: ''
     },
     experienceLevel: {
-      type: String,
-      default: ''
+      type: DataTypes.STRING,
+      defaultValue: ''
     },
     learningStyle: {
-      type: String,
-      default: ''
+      type: DataTypes.STRING,
+      defaultValue: ''
     },
     weeklyCommitment: {
-      type: String,
-      default: ''
+      type: DataTypes.STRING,
+      defaultValue: ''
     },
     targetRole: {
-      type: String,
-      default: ''
+      type: DataTypes.STRING,
+      defaultValue: ''
     },
     bio: {
-      type: String,
-      default: ''
+      type: DataTypes.TEXT,
+      defaultValue: ''
     },
     interests: {
-      type: [String],
-      default: []
+      type: DataTypes.JSON,
+      defaultValue: []
     }
   },
   {
@@ -50,4 +56,4 @@ const profileSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model('Profile', profileSchema);
+module.exports = Profile;

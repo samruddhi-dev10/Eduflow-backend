@@ -1,4 +1,4 @@
-// Course Controller logic with Database integration
+// Course Controller logic with SQL Database integration
 const Course = require('../models/Course');
 const { isDBConnected } = require('../config/db');
 
@@ -11,7 +11,7 @@ const courses = [];
 const getCourses = async (req, res, next) => {
   try {
     if (isDBConnected()) {
-      const dbCourses = await Course.find();
+      const dbCourses = await Course.findAll();
       return res.status(200).json({
         success: true,
         count: dbCourses.length,
@@ -35,7 +35,7 @@ const getCourses = async (req, res, next) => {
 const getCourseById = async (req, res, next) => {
   try {
     if (isDBConnected()) {
-      const course = await Course.findById(req.params.id);
+      const course = await Course.findByPk(req.params.id);
       if (!course) {
         return res.status(404).json({ success: false, message: 'Course not found' });
       }
