@@ -245,9 +245,91 @@ const options = {
       '/api/courses': {
         get: {
           tags: ['Courses'],
-          summary: 'Get List of All Courses',
+          summary: 'Get Filtered, Searchable & Paginated Course Catalog',
+          description: 'Returns a list of courses with support for category filter, difficulty level, search query, sorting, and pagination.',
+          parameters: [
+            {
+              name: 'category',
+              in: 'query',
+              required: false,
+              schema: { type: 'string', default: 'All' },
+              description: 'Filter courses by category (e.g., Data Science, Design, Business, Finance, Development, Analytics, or All)'
+            },
+            {
+              name: 'level',
+              in: 'query',
+              required: false,
+              schema: { type: 'string', default: 'All Levels' },
+              description: 'Filter courses by difficulty level (All Levels, Beginner, Intermediate, Advanced)'
+            },
+            {
+              name: 'sort',
+              in: 'query',
+              required: false,
+              schema: { type: 'string', default: 'Popularity' },
+              description: 'Sort order (Popularity, Newest, Rating)'
+            },
+            {
+              name: 'search',
+              in: 'query',
+              required: false,
+              schema: { type: 'string' },
+              description: 'Search string to match title, description, instructor, or category'
+            },
+            {
+              name: 'page',
+              in: 'query',
+              required: false,
+              schema: { type: 'integer', default: 1 },
+              description: 'Page number for pagination'
+            },
+            {
+              name: 'limit',
+              in: 'query',
+              required: false,
+              schema: { type: 'integer', default: 6 },
+              description: 'Number of items per page'
+            }
+          ],
           responses: {
-            200: { description: 'List of courses returned' }
+            200: {
+              description: 'Successfully fetched course list with pagination metadata',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean', example: true },
+                      count: { type: 'integer', example: 6 },
+                      totalCourses: { type: 'integer', example: 12 },
+                      page: { type: 'integer', example: 1 },
+                      totalPages: { type: 'integer', example: 2 },
+                      hasMore: { type: 'boolean', example: true },
+                      data: {
+                        type: 'array',
+                        items: {
+                          type: 'object',
+                          properties: {
+                            id: { type: 'string', example: '756e898a-949a-41a5-90bb-035b625ac95a' },
+                            title: { type: 'string', example: 'Advanced Machine Learning with Python' },
+                            description: { type: 'string', example: 'Master deep learning architectures and reinforcement learning.' },
+                            category: { type: 'string', example: 'Data Science' },
+                            level: { type: 'string', example: 'Advanced' },
+                            instructor: { type: 'string', example: 'Dr. Sarah Jenkins' },
+                            thumbnail: { type: 'string', example: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=500&q=80' },
+                            totalLessons: { type: 'integer', example: 48 },
+                            totalModules: { type: 'integer', example: 12 },
+                            duration: { type: 'string', example: '24h content' },
+                            rating: { type: 'number', example: 4.9 },
+                            studentsCount: { type: 'string', example: '4.5k students' }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         post: {
@@ -262,9 +344,15 @@ const options = {
                   type: 'object',
                   required: ['title'],
                   properties: {
-                    title: { type: 'string', example: 'Node.js Essentials' },
-                    instructor: { type: 'string', example: 'Samruddhi' },
-                    duration: { type: 'string', example: '6 weeks' }
+                    title: { type: 'string', example: 'Node.js Microservices Architecture' },
+                    description: { type: 'string', example: 'Build scalable enterprise REST APIs.' },
+                    category: { type: 'string', example: 'Development' },
+                    level: { type: 'string', example: 'Intermediate' },
+                    instructor: { type: 'string', example: 'Alex Johnson' },
+                    thumbnail: { type: 'string', example: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=500&q=80' },
+                    totalLessons: { type: 'integer', example: 30 },
+                    totalModules: { type: 'integer', example: 10 },
+                    duration: { type: 'string', example: '18h content' }
                   }
                 }
               }
@@ -272,6 +360,71 @@ const options = {
           },
           responses: {
             201: { description: 'Course created successfully' }
+          }
+        }
+      },
+      '/api/courses/categories': {
+        get: {
+          tags: ['Courses'],
+          summary: 'Get List of All Available Course Categories',
+          responses: {
+            200: {
+              description: 'List of unique course categories',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean', example: true },
+                      data: {
+                        type: 'array',
+                        items: { type: 'string' },
+                        example: ['All', 'Data Science', 'Design', 'Business', 'Finance', 'Development', 'Analytics']
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      '/api/courses/{id}': {
+        get: {
+          tags: ['Courses'],
+          summary: 'Get Single Course Details by ID',
+          parameters: [
+            {
+              name: 'id',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' },
+              description: 'Course ID'
+            }
+          ],
+          responses: {
+            200: { description: 'Course detail object returned' },
+            404: { description: 'Course not found' }
+          }
+        }
+      },
+      '/api/courses/{id}/enroll': {
+        post: {
+          tags: ['Courses'],
+          summary: 'Enroll Logged-In User into Course',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'id',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' },
+              description: 'Course ID to enroll in'
+            }
+          ],
+          responses: {
+            200: { description: 'Successfully enrolled in course' },
+            401: { description: 'Unauthorized' }
           }
         }
       },

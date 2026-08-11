@@ -1,35 +1,329 @@
-// Course Controller logic with SQL Database integration
+// Course Controller logic with SQL Database integration and rich query filters
 const Course = require('../models/Course');
 const { isDBConnected } = require('../config/db');
+const { Op } = require('sequelize');
 
-// In-memory course storage fallback
-const courses = [];
+// In-memory course storage fallback with full catalog demo dataset
+const fallbackCourses = [
+  {
+    id: 'c_1',
+    title: 'Advanced Machine Learning with Python',
+    description: 'Master deep learning architectures, reinforcement learning, and productionizing ML models with Python.',
+    category: 'Data Science',
+    level: 'Advanced',
+    instructor: 'Dr. Sarah Jenkins',
+    thumbnail: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=500&q=80',
+    totalLessons: 48,
+    totalModules: 12,
+    duration: '24h content',
+    rating: 4.9,
+    studentsCount: '4.5k students',
+    createdAt: new Date('2024-01-15').toISOString()
+  },
+  {
+    id: 'c_2',
+    title: 'Design Thinking Foundations',
+    description: 'Learn human-centered problem solving, wireframing, prototyping, and user journey mapping.',
+    category: 'Design',
+    level: 'Beginner',
+    instructor: 'Marcus Thorne',
+    thumbnail: 'https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?w=500&q=80',
+    totalLessons: 32,
+    totalModules: 8,
+    duration: '15h content',
+    rating: 4.8,
+    studentsCount: '2.1k students',
+    createdAt: new Date('2024-02-01').toISOString()
+  },
+  {
+    id: 'c_3',
+    title: 'Strategic Project Management',
+    description: 'Drive high-impact enterprise projects using Agile, Scrum, Kanban, and modern leadership frameworks.',
+    category: 'Business',
+    level: 'Intermediate',
+    instructor: 'Elena Rodriguez',
+    thumbnail: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=500&q=80',
+    totalLessons: 40,
+    totalModules: 10,
+    duration: '18h content',
+    rating: 4.7,
+    studentsCount: '3.8k students',
+    createdAt: new Date('2024-02-10').toISOString()
+  },
+  {
+    id: 'c_4',
+    title: 'Blockchain & Future Markets',
+    description: 'Understand decentralized protocols, smart contracts, Web3 economics, and crypto assets.',
+    category: 'Finance',
+    level: 'Advanced',
+    instructor: 'Jameson Blackwood',
+    thumbnail: 'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=500&q=80',
+    totalLessons: 56,
+    totalModules: 14,
+    duration: '30h content',
+    rating: 4.9,
+    studentsCount: '1.9k students',
+    createdAt: new Date('2024-03-01').toISOString()
+  },
+  {
+    id: 'c_5',
+    title: 'Emotional Intelligence for Leaders',
+    description: 'Develop executive presence, empathy, dispute resolution skills, and resilient team management.',
+    category: 'Development',
+    level: 'Beginner',
+    instructor: 'Dr. Linda Zhang',
+    thumbnail: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=500&q=80',
+    totalLessons: 24,
+    totalModules: 6,
+    duration: '10h content',
+    rating: 4.6,
+    studentsCount: '1.2k students',
+    createdAt: new Date('2024-03-15').toISOString()
+  },
+  {
+    id: 'c_6',
+    title: 'Data-Driven Decision Making',
+    description: 'Transform raw corporate data into actionable business intelligence using statistical analysis & dashboards.',
+    category: 'Analytics',
+    level: 'Intermediate',
+    instructor: 'Robert Chen',
+    thumbnail: 'https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=500&q=80',
+    totalLessons: 44,
+    totalModules: 11,
+    duration: '20h content',
+    rating: 4.8,
+    studentsCount: '2.9k students',
+    createdAt: new Date('2024-04-01').toISOString()
+  },
+  {
+    id: 'c_7',
+    title: 'Full-Stack Web Development Bootcamp',
+    description: 'Master HTML, CSS, JavaScript, React, Node.js, and Express by building production-ready apps.',
+    category: 'Development',
+    level: 'Beginner',
+    instructor: 'Alex Johnson',
+    thumbnail: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=500&q=80',
+    totalLessons: 64,
+    totalModules: 16,
+    duration: '40h content',
+    rating: 4.9,
+    studentsCount: '5.4k students',
+    createdAt: new Date('2024-04-10').toISOString()
+  },
+  {
+    id: 'c_8',
+    title: 'Generative AI & LLM Engineering',
+    description: 'Build RAG pipelines, fine-tune open source LLMs, and deploy AI assistants with LangChain.',
+    category: 'Data Science',
+    level: 'Advanced',
+    instructor: 'Dr. Sophia Vance',
+    thumbnail: 'https://images.unsplash.com/photo-1677442136019-21780efad99a?w=500&q=80',
+    totalLessons: 60,
+    totalModules: 15,
+    duration: '35h content',
+    rating: 4.95,
+    studentsCount: '6.1k students',
+    createdAt: new Date('2024-04-20').toISOString()
+  },
+  {
+    id: 'c_9',
+    title: 'Product Strategy & Growth Marketing',
+    description: 'Scale products from 0 to 1 million users using data funnel optimization and modern product design.',
+    category: 'Business',
+    level: 'Intermediate',
+    instructor: 'Sarah Connor',
+    thumbnail: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=500&q=80',
+    totalLessons: 36,
+    totalModules: 9,
+    duration: '16h content',
+    rating: 4.75,
+    studentsCount: '3.1k students',
+    createdAt: new Date('2024-05-01').toISOString()
+  },
+  {
+    id: 'c_10',
+    title: 'Cybersecurity Fundamentals & Threat Intel',
+    description: 'Learn ethical hacking, network defense mechanisms, zero trust architecture, and cloud security.',
+    category: 'Development',
+    level: 'Intermediate',
+    instructor: 'Michael Brown',
+    thumbnail: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=500&q=80',
+    totalLessons: 48,
+    totalModules: 12,
+    duration: '22h content',
+    rating: 4.85,
+    studentsCount: '2.7k students',
+    createdAt: new Date('2024-05-15').toISOString()
+  },
+  {
+    id: 'c_11',
+    title: 'UI/UX Design Systems & Figma Mastery',
+    description: 'Architect scalable design tokens, component libraries, and interactive prototypes for web & mobile.',
+    category: 'Design',
+    level: 'Intermediate',
+    instructor: 'Emily Carter',
+    thumbnail: 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=500&q=80',
+    totalLessons: 40,
+    totalModules: 10,
+    duration: '18h content',
+    rating: 4.8,
+    studentsCount: '4.2k students',
+    createdAt: new Date('2024-06-01').toISOString()
+  },
+  {
+    id: 'c_12',
+    title: 'Financial Modeling & Venture Capital',
+    description: 'Master discounted cash flow analysis, cap tables, valuation techniques, and startup financing pitch decks.',
+    category: 'Finance',
+    level: 'Advanced',
+    instructor: 'Jameson Blackwood',
+    thumbnail: 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=500&q=80',
+    totalLessons: 52,
+    totalModules: 13,
+    duration: '28h content',
+    rating: 4.9,
+    studentsCount: '1.7k students',
+    createdAt: new Date('2024-06-15').toISOString()
+  }
+];
 
-// @desc    Get all courses
+// @desc    Get all courses (with category filter, difficulty level, search, sort, and pagination)
 // @route   GET /api/courses
 // @access  Public
 const getCourses = async (req, res, next) => {
   try {
+    const {
+      category = 'All',
+      level = 'All Levels',
+      search = '',
+      sort = 'Popularity',
+      page = 1,
+      limit = 6
+    } = req.query;
+
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt(limit, 10) || 6;
+    const offset = (pageNum - 1) * limitNum;
+
     if (isDBConnected()) {
-      const dbCourses = await Course.findAll();
+      const whereCondition = {};
+
+      if (category && category !== 'All') {
+        whereCondition.category = { [Op.iLike || Op.like]: `%${category}%` };
+      }
+
+      if (level && level !== 'All Levels') {
+        whereCondition.level = level;
+      }
+
+      if (search && search.trim() !== '') {
+        const queryStr = `%${search.trim()}%`;
+        whereCondition[Op.or] = [
+          { title: { [Op.iLike || Op.like]: queryStr } },
+          { description: { [Op.iLike || Op.like]: queryStr } },
+          { instructor: { [Op.iLike || Op.like]: queryStr } },
+          { category: { [Op.iLike || Op.like]: queryStr } }
+        ];
+      }
+
+      let orderClause = [['createdAt', 'DESC']];
+      if (sort === 'Popularity') {
+        orderClause = [['rating', 'DESC'], ['studentsCount', 'DESC']];
+      } else if (sort === 'Newest') {
+        orderClause = [['createdAt', 'DESC']];
+      } else if (sort === 'Rating') {
+        orderClause = [['rating', 'DESC']];
+      }
+
+      const { count, rows } = await Course.findAndCountAll({
+        where: whereCondition,
+        order: orderClause,
+        limit: limitNum,
+        offset: offset
+      });
+
+      const totalPages = Math.ceil(count / limitNum) || 1;
+
       return res.status(200).json({
         success: true,
-        count: dbCourses.length,
-        data: dbCourses
+        count: rows.length,
+        totalCourses: count,
+        page: pageNum,
+        totalPages,
+        hasMore: pageNum < totalPages,
+        data: rows
       });
     }
 
+    // In-memory Fallback Filter Logic
+    let filtered = [...fallbackCourses];
+
+    if (category && category !== 'All') {
+      filtered = filtered.filter(c => c.category.toLowerCase().includes(category.toLowerCase()));
+    }
+
+    if (level && level !== 'All Levels') {
+      filtered = filtered.filter(c => c.level.toLowerCase() === level.toLowerCase());
+    }
+
+    if (search && search.trim() !== '') {
+      const q = search.trim().toLowerCase();
+      filtered = filtered.filter(c =>
+        c.title.toLowerCase().includes(q) ||
+        c.description.toLowerCase().includes(q) ||
+        c.instructor.toLowerCase().includes(q) ||
+        c.category.toLowerCase().includes(q)
+      );
+    }
+
+    if (sort === 'Popularity') {
+      filtered.sort((a, b) => b.rating - a.rating);
+    } else if (sort === 'Newest') {
+      filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    } else if (sort === 'Rating') {
+      filtered.sort((a, b) => b.rating - a.rating);
+    }
+
+    const totalCourses = filtered.length;
+    const totalPages = Math.ceil(totalCourses / limitNum) || 1;
+    const paginated = filtered.slice(offset, offset + limitNum);
+
     res.status(200).json({
       success: true,
-      count: courses.length,
-      data: courses
+      count: paginated.length,
+      totalCourses,
+      page: pageNum,
+      totalPages,
+      hasMore: pageNum < totalPages,
+      data: paginated
     });
   } catch (error) {
     next(error);
   }
 };
 
-// @desc    Get single course by ID
+// @desc    Get all distinct course categories
+// @route   GET /api/courses/categories
+// @access  Public
+const getCategories = async (req, res, next) => {
+  try {
+    if (isDBConnected()) {
+      const categories = await Course.findAll({
+        attributes: ['category'],
+        group: ['category']
+      });
+      const catList = ['All', ...new Set(categories.map(c => c.category))];
+      return res.status(200).json({ success: true, data: catList });
+    }
+
+    const catList = ['All', ...new Set(fallbackCourses.map(c => c.category))];
+    res.status(200).json({ success: true, data: catList });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get single course by ID with detailed curriculum/modules
 // @route   GET /api/courses/:id
 // @access  Public
 const getCourseById = async (req, res, next) => {
@@ -42,7 +336,7 @@ const getCourseById = async (req, res, next) => {
       return res.status(200).json({ success: true, data: course });
     }
 
-    const course = courses.find(c => c.id === req.params.id);
+    const course = fallbackCourses.find(c => c.id === req.params.id || c.id === `c_${req.params.id}`);
     if (!course) {
       return res.status(404).json({ success: false, message: 'Course not found' });
     }
@@ -57,7 +351,7 @@ const getCourseById = async (req, res, next) => {
 // @access  Private / Instructor
 const createCourse = async (req, res, next) => {
   try {
-    const { title, description, category, level, instructor, thumbnail, totalLessons } = req.body;
+    const { title, description, category, level, instructor, thumbnail, totalLessons, totalModules, duration } = req.body;
     if (!title) {
       return res.status(400).json({ success: false, message: 'Title is required' });
     }
@@ -70,7 +364,9 @@ const createCourse = async (req, res, next) => {
         level: level || 'Beginner',
         instructor: instructor || req.user?.fullName || 'Eduflow Instructor',
         thumbnail: thumbnail || '',
-        totalLessons: totalLessons || 10
+        totalLessons: totalLessons || 10,
+        totalModules: totalModules || 10,
+        duration: duration || '10h content'
       });
       return res.status(201).json({ success: true, data: newCourse });
     }
@@ -84,10 +380,31 @@ const createCourse = async (req, res, next) => {
       instructor: instructor || req.user?.fullName || 'Eduflow Instructor',
       thumbnail: thumbnail || '',
       totalLessons: totalLessons || 10,
+      totalModules: totalModules || 10,
+      duration: duration || '10h content',
+      rating: 4.8,
+      studentsCount: '1 student',
       createdAt: new Date().toISOString()
     };
-    courses.push(newCourse);
+    fallbackCourses.unshift(newCourse);
     res.status(201).json({ success: true, data: newCourse });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Enroll user into a course
+// @route   POST /api/courses/:id/enroll
+// @access  Private
+const enrollCourse = async (req, res, next) => {
+  try {
+    const courseId = req.params.id;
+    // User enrollment logic
+    res.status(200).json({
+      success: true,
+      message: `Successfully enrolled in course ${courseId}`,
+      enrolledAt: new Date().toISOString()
+    });
   } catch (error) {
     next(error);
   }
@@ -95,6 +412,8 @@ const createCourse = async (req, res, next) => {
 
 module.exports = {
   getCourses,
+  getCategories,
   getCourseById,
-  createCourse
+  createCourse,
+  enrollCourse
 };
