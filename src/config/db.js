@@ -47,8 +47,8 @@ const connectDB = async () => {
     isConnected = true;
     console.log(`✅ SQL Database Connected (${sequelize.getDialect().toUpperCase()})`);
 
-    // Synchronize models with DB schema
-    await sequelize.sync();
+    // Synchronize models with DB schema (alter: true ensures new columns like totalModules & duration are added automatically)
+    await sequelize.sync({ alter: true });
     console.log('✅ SQL Models Synchronized');
     return true;
   } catch (error) {
