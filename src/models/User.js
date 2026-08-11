@@ -39,6 +39,7 @@ const User = sequelize.define(
   },
   {
     timestamps: true,
+    tableName: 'users',
     hooks: {
       beforeSave: async (user) => {
         if (user.changed('password')) {
