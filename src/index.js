@@ -83,8 +83,11 @@ app.get('/', (req, res) => {
         downloadResources: 'GET /api/dashboard/download-resources (Protected)'
       },
       courses: {
-        getAll: 'GET /api/courses',
-        create: 'POST /api/courses (Protected)'
+        getAll: 'GET /api/courses?category=All&level=All+Levels&search=&sort=Popularity&page=1&limit=6',
+        getCategories: 'GET /api/courses/categories',
+        getById: 'GET /api/courses/:id',
+        create: 'POST /api/courses (Protected)',
+        enroll: 'POST /api/courses/:id/enroll (Protected)'
       }
     }
   });

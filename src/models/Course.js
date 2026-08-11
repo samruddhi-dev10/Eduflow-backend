@@ -37,6 +37,14 @@ const Course = sequelize.define(
       type: DataTypes.INTEGER,
       defaultValue: 10
     },
+    totalModules: {
+      type: DataTypes.INTEGER,
+      defaultValue: 10
+    },
+    duration: {
+      type: DataTypes.STRING,
+      defaultValue: '10h content'
+    },
     rating: {
       type: DataTypes.FLOAT,
       defaultValue: 4.8
