@@ -31,7 +31,7 @@ if (process.env.DATABASE_URL) {
     process.env.DB_PASSWORD || '',
     {
       host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT, 10) || 5432,
+      port: parseInt(process.env.DB_PORT, 10) || (dialect === 'mysql' ? 3306 : 5432),
       dialect: dialect,
       logging: process.env.NODE_ENV === 'development' ? console.log : false
     }
@@ -46,6 +46,7 @@ const connectDB = async () => {
     await sequelize.authenticate();
     isConnected = true;
     console.log(`✅ SQL Database Connected (${sequelize.getDialect().toUpperCase()})`);
+    console.log(`🗄️  Using DB: ${sequelize.getDialect().toUpperCase()} @ ${process.env.DB_HOST || 'localhost'}:${sequelize.config.port}/${process.env.DB_NAME || 'eduflow'}`);
 
     // Synchronize models with DB schema (alter: true ensures new columns like totalModules & duration are added automatically)
     await sequelize.sync({ alter: true });
