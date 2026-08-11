@@ -84,13 +84,14 @@ const initialUsers = [
   }
 ];
 
-const seedData = async () => {
+const seedData = async (exitOnFinish = true) => {
   try {
     console.log('🌱 Connecting to database for seeding...');
     const connected = await connectDB();
     if (!connected) {
-      console.error('❌ Could not connect to database. Make sure MySQL is running.');
-      process.exit(1);
+      console.error('❌ Could not connect to database. Make sure MySQL/Postgres is running.');
+      if (exitOnFinish) process.exit(1);
+      return;
     }
 
     console.log('🔄 Syncing models...');
@@ -99,7 +100,7 @@ const seedData = async () => {
     // Seed Courses
     const existingCourses = await Course.count();
     if (existingCourses === 0) {
-      console.log('📦 Seeding sample courses into MySQL database...');
+      console.log('📦 Seeding sample courses into database...');
       await Course.bulkCreate(initialCourses);
       console.log(`✅ Successfully seeded ${initialCourses.length} courses!`);
     } else {
@@ -156,11 +157,16 @@ const seedData = async () => {
     }
 
     console.log('🎉 Seeding complete!');
-    process.exit(0);
+    if (exitOnFinish) process.exit(0);
   } catch (error) {
     console.error('❌ Error during seeding:', error);
-    process.exit(1);
+    if (exitOnFinish) process.exit(1);
   }
 };
 
-seedData();
+if (require.main === module) {
+  seedData(true);
+}
+
+module.exports = seedData;
+
