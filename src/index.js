@@ -113,9 +113,23 @@ const getLocalIp = () => {
   return 'localhost';
 };
 
+const seedData = require('./seed');
+
 // Start Server after connecting to Database
 const startServer = async () => {
   await connectDB();
+  
+  // Auto-seed database if empty on boot
+  try {
+    const Course = require('./models/Course');
+    const courseCount = await Course.count();
+    if (courseCount === 0) {
+      console.log('🌱 Cloud database is empty. Auto-seeding initial courses and demo users...');
+      await seedData(false);
+    }
+  } catch (e) {
+    console.warn('⚠️ Auto-seed check skipped:', e.message);
+  }
 
   app.listen(PORT, '0.0.0.0', () => {
     const localIp = getLocalIp();

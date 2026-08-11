@@ -46,7 +46,8 @@ const Dashboard = sequelize.define(
     }
   },
   {
-    timestamps: true
+    timestamps: true,
+    tableName: 'dashboards'
   }
 );
 

@@ -52,7 +52,8 @@ const Profile = sequelize.define(
     }
   },
   {
-    timestamps: true
+    timestamps: true,
+    tableName: 'profiles'
   }
 );
 
