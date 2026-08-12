@@ -531,86 +531,6 @@ const enrollCourse = async (req, res, next) => {
   }
 };
 
-const demoMyLearningData = {
-  inProgress: [
-    {
-      id: 'cl_1',
-      courseId: 'c_8',
-      title: 'Predictive Modeling with Python',
-      category: 'Advanced Data Science',
-      timeLeft: '2h left',
-      progress: 68,
-      completedLessons: 17,
-      totalLessons: 25,
-      actionButtonText: 'Continue Lesson',
-      lastAccessed: '2 hours ago',
-      thumbnail: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=500&q=80'
-    },
-    {
-      id: 'cl_2',
-      courseId: 'c_11',
-      title: 'Design Systems for Enterprise',
-      category: 'UX/UI Design',
-      timeLeft: '14h left',
-      progress: 12,
-      completedLessons: 3,
-      totalLessons: 24,
-      actionButtonText: 'Resume Module',
-      lastAccessed: 'Yesterday',
-      thumbnail: 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=500&q=80'
-    },
-    {
-      id: 'cl_3',
-      courseId: 'c_5',
-      title: 'Critical Thinking for Leaders',
-      category: 'Professional Development',
-      timeLeft: '45m left',
-      progress: 92,
-      completedLessons: 22,
-      totalLessons: 24,
-      actionButtonText: 'Finish Module',
-      lastAccessed: '3 days ago',
-      thumbnail: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=500&q=80'
-    }
-  ],
-  savedForLater: [
-    {
-      id: 'sv_1',
-      courseId: 'c_15',
-      title: 'Time Mastery for Creatives',
-      category: 'Management',
-      duration: '4.5 hours',
-      thumbnail: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=500&q=80'
-    },
-    {
-      id: 'sv_2',
-      courseId: 'c_10',
-      title: 'Cybersecurity Fundamentals',
-      category: 'Security',
-      duration: '12 hours',
-      thumbnail: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=500&q=80'
-    }
-  ],
-  completed: [
-    {
-      id: 'cp_1',
-      courseId: 'c_20',
-      title: 'Intro to Agile',
-      certificateDate: 'Certified Oct 12',
-      progress: 100,
-      isCertified: true
-    },
-    {
-      id: 'cp_2',
-      courseId: 'c_21',
-      title: 'Modern JS ES6+',
-      certificateDate: 'Certified Sep 28',
-      progress: 100,
-      isCertified: true
-    }
-  ]
-};
-
 const formatMyLearningCard = (item) => {
   const progress = item.progress || 0;
   let actionButtonText = item.actionButtonText;
@@ -660,13 +580,6 @@ const getMyLearning = async (req, res, next) => {
     let userEnrolled = (dashboard?.continueLearning || []).map(formatMyLearningCard);
     let userSaved = dashboard?.savedForLater || [];
     let userCompleted = (dashboard?.completed || []).concat(userEnrolled.filter(c => c.isCompleted));
-
-    // Fall back to rich demo dataset if user has no enrollments yet
-    if (userEnrolled.length === 0 && userSaved.length === 0 && userCompleted.length === 0) {
-      userEnrolled = demoMyLearningData.inProgress.map(formatMyLearningCard);
-      userSaved = demoMyLearningData.savedForLater;
-      userCompleted = demoMyLearningData.completed;
-    }
 
     let inProgress = userEnrolled.filter(c => !c.isCompleted);
 
