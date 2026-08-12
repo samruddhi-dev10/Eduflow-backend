@@ -35,6 +35,26 @@ const User = sequelize.define(
     avatarUrl: {
       type: DataTypes.STRING,
       defaultValue: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&q=80'
+    },
+    isEmailVerified: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
+    },
+    resetPasswordToken: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    resetPasswordExpires: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
+    otpCode: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    otpExpires: {
+      type: DataTypes.DATE,
+      allowNull: true
     }
   },
   {

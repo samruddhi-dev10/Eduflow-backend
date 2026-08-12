@@ -1,6 +1,6 @@
 // Course Controller logic with SQL Database integration and rich query filters
 const Course = require('../models/Course');
-const { isDBConnected } = require('../config/db');
+const { sequelize, isDBConnected } = require('../config/db');
 const { Op } = require('sequelize');
 
 // In-memory course storage fallback with full catalog demo dataset
@@ -207,9 +207,11 @@ const getCourses = async (req, res, next) => {
 
     if (isDBConnected()) {
       const whereCondition = {};
+      const dialect = (sequelize && sequelize.getDialect) ? sequelize.getDialect() : 'mysql';
+      const likeOp = dialect === 'postgres' ? Op.iLike : Op.like;
 
       if (category && category !== 'All') {
-        whereCondition.category = { [Op.iLike || Op.like]: `%${category}%` };
+        whereCondition.category = { [likeOp]: `%${category}%` };
       }
 
       if (level && level !== 'All Levels') {
@@ -219,10 +221,10 @@ const getCourses = async (req, res, next) => {
       if (search && search.trim() !== '') {
         const queryStr = `%${search.trim()}%`;
         whereCondition[Op.or] = [
-          { title: { [Op.iLike || Op.like]: queryStr } },
-          { description: { [Op.iLike || Op.like]: queryStr } },
-          { instructor: { [Op.iLike || Op.like]: queryStr } },
-          { category: { [Op.iLike || Op.like]: queryStr } }
+          { title: { [likeOp]: queryStr } },
+          { description: { [likeOp]: queryStr } },
+          { instructor: { [likeOp]: queryStr } },
+          { category: { [likeOp]: queryStr } }
         ];
       }
 
@@ -323,24 +325,110 @@ const getCategories = async (req, res, next) => {
   }
 };
 
+const generateDefaultModules = (title) => [
+  {
+    id: 'm_1',
+    title: 'Module 1: Foundations & Core Architecture',
+    lessons: [
+      {
+        id: 'l_1',
+        title: `1.1 Introduction to ${title}`,
+        duration: '15 mins',
+        videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+        type: 'video',
+        isCompleted: false
+      },
+      {
+        id: 'l_2',
+        title: '1.2 Environment Setup & Tools Configuration',
+        duration: '20 mins',
+        videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+        type: 'video',
+        isCompleted: false
+      },
+      {
+        id: 'l_3',
+        title: '1.3 Fundamental Syntax & Core Concepts',
+        duration: '25 mins',
+        videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+        type: 'video',
+        isCompleted: false
+      }
+    ]
+  },
+  {
+    id: 'm_2',
+    title: 'Module 2: Deep Dive & Practical Implementation',
+    lessons: [
+      {
+        id: 'l_4',
+        title: '2.1 Building Scalable Real-World Modules',
+        duration: '35 mins',
+        videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+        type: 'video',
+        isCompleted: false
+      },
+      {
+        id: 'l_5',
+        title: '2.2 Advanced State Management & Data Flows',
+        duration: '40 mins',
+        videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+        type: 'video',
+        isCompleted: false
+      }
+    ]
+  },
+  {
+    id: 'm_3',
+    title: 'Module 3: Capstone Project & Deployment',
+    lessons: [
+      {
+        id: 'l_6',
+        title: '3.1 Building the Capstone Project',
+        duration: '45 mins',
+        videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+        type: 'video',
+        isCompleted: false
+      },
+      {
+        id: 'l_7',
+        title: '3.2 Production Deployment & Performance Optimization',
+        duration: '30 mins',
+        videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+        type: 'video',
+        isCompleted: false
+      }
+    ]
+  }
+];
+
 // @desc    Get single course by ID with detailed curriculum/modules
 // @route   GET /api/courses/:id
 // @access  Public
 const getCourseById = async (req, res, next) => {
   try {
+    let courseData = null;
+
     if (isDBConnected()) {
-      const course = await Course.findByPk(req.params.id);
-      if (!course) {
-        return res.status(404).json({ success: false, message: 'Course not found' });
+      const dbCourse = await Course.findByPk(req.params.id);
+      if (dbCourse) {
+        courseData = dbCourse.toJSON ? dbCourse.toJSON() : dbCourse;
       }
-      return res.status(200).json({ success: true, data: course });
     }
 
-    const course = fallbackCourses.find(c => c.id === req.params.id || c.id === `c_${req.params.id}`);
-    if (!course) {
+    if (!courseData) {
+      courseData = fallbackCourses.find(c => c.id === req.params.id || c.id === `c_${req.params.id}`);
+    }
+
+    if (!courseData) {
       return res.status(404).json({ success: false, message: 'Course not found' });
     }
-    res.status(200).json({ success: true, data: course });
+
+    if (!courseData.modules || courseData.modules.length === 0) {
+      courseData.modules = generateDefaultModules(courseData.title);
+    }
+
+    res.status(200).json({ success: true, data: courseData });
   } catch (error) {
     next(error);
   }
@@ -351,10 +439,12 @@ const getCourseById = async (req, res, next) => {
 // @access  Private / Instructor
 const createCourse = async (req, res, next) => {
   try {
-    const { title, description, category, level, instructor, thumbnail, totalLessons, totalModules, duration } = req.body;
+    const { title, description, category, level, instructor, thumbnail, totalLessons, totalModules, duration, modules } = req.body;
     if (!title) {
       return res.status(400).json({ success: false, message: 'Title is required' });
     }
+
+    const courseModules = modules && modules.length > 0 ? modules : generateDefaultModules(title);
 
     if (isDBConnected()) {
       const newCourse = await Course.create({
@@ -366,7 +456,8 @@ const createCourse = async (req, res, next) => {
         thumbnail: thumbnail || '',
         totalLessons: totalLessons || 10,
         totalModules: totalModules || 10,
-        duration: duration || '10h content'
+        duration: duration || '10h content',
+        modules: courseModules
       });
       return res.status(201).json({ success: true, data: newCourse });
     }
@@ -384,6 +475,7 @@ const createCourse = async (req, res, next) => {
       duration: duration || '10h content',
       rating: 4.8,
       studentsCount: '1 student',
+      modules: courseModules,
       createdAt: new Date().toISOString()
     };
     fallbackCourses.unshift(newCourse);
@@ -393,17 +485,141 @@ const createCourse = async (req, res, next) => {
   }
 };
 
+const {
+  enrollUserInCourseByUserId,
+  toggleSaveCourseForLaterByUserId,
+  completeLessonInCourseByUserId,
+  getDashboardDataByUserId
+} = require('../utils/userStore');
+
 // @desc    Enroll user into a course
 // @route   POST /api/courses/:id/enroll
 // @access  Private
 const enrollCourse = async (req, res, next) => {
   try {
+    const userId = req.user?.id;
     const courseId = req.params.id;
-    // User enrollment logic
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    let targetCourse = null;
+    if (isDBConnected()) {
+      targetCourse = await Course.findByPk(courseId);
+    }
+
+    if (!targetCourse) {
+      targetCourse = fallbackCourses.find(c => c.id === courseId || c.id === `c_${courseId}`) || {
+        id: courseId,
+        title: 'EduFlow Learning Course',
+        instructor: 'EduFlow Faculty',
+        totalLessons: 20
+      };
+    }
+
+    const updatedDashboard = await enrollUserInCourseByUserId(userId, targetCourse);
+
     res.status(200).json({
       success: true,
-      message: `Successfully enrolled in course ${courseId}`,
-      enrolledAt: new Date().toISOString()
+      message: `Successfully enrolled in "${targetCourse.title}"`,
+      enrolledAt: new Date().toISOString(),
+      dashboard: updatedDashboard
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get user's enrolled courses (My Learning payload for Tabs: All, In Progress, Saved for Later, Completed)
+// @route   GET /api/courses/my-learning
+// @access  Private
+const getMyLearning = async (req, res, next) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    const dashboard = await getDashboardDataByUserId(userId);
+    const continueLearning = dashboard?.continueLearning || [];
+    const savedForLater = dashboard?.savedForLater || [];
+
+    const inProgress = continueLearning.filter(c => (c.progress || 0) < 100);
+    const completed = continueLearning.filter(c => (c.progress || 0) >= 100);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        inProgress,
+        savedForLater,
+        completed,
+        all: continueLearning,
+        totalEnrolled: continueLearning.length
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Toggle saving a course for later
+// @route   POST /api/courses/:id/save
+// @access  Private
+const toggleSaveCourse = async (req, res, next) => {
+  try {
+    const userId = req.user?.id;
+    const courseId = req.params.id;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    let targetCourse = null;
+    if (isDBConnected()) {
+      targetCourse = await Course.findByPk(courseId);
+    }
+
+    if (!targetCourse) {
+      targetCourse = fallbackCourses.find(c => c.id === courseId || c.id === `c_${courseId}`) || {
+        id: courseId,
+        title: 'EduFlow Course',
+        category: 'General',
+        duration: '5 hours'
+      };
+    }
+
+    const result = await toggleSaveCourseForLaterByUserId(userId, targetCourse);
+
+    res.status(200).json({
+      success: true,
+      message: result.isSaved ? 'Course saved for later' : 'Course removed from saved',
+      data: result
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Mark a lesson as completed & update user progress
+// @route   POST /api/courses/:id/complete-lesson & POST /api/courses/:id/lessons/:lessonId/complete
+// @access  Private
+const completeLesson = async (req, res, next) => {
+  try {
+    const userId = req.user?.id;
+    const courseId = req.params.id;
+    const lessonId = req.body?.lessonId || req.params.lessonId || 'l_1';
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    const result = await completeLessonInCourseByUserId(userId, courseId, lessonId);
+
+    res.status(200).json({
+      success: true,
+      message: 'Lesson marked as completed!',
+      data: result
     });
   } catch (error) {
     next(error);
@@ -415,5 +631,9 @@ module.exports = {
   getCategories,
   getCourseById,
   createCourse,
-  enrollCourse
+  enrollCourse,
+  getMyLearning,
+  toggleSaveCourse,
+  completeLesson
 };
+

@@ -150,6 +150,152 @@ const options = {
           }
         }
       },
+      '/api/auth/reset-password': {
+        post: {
+          tags: ['Authentication'],
+          summary: 'Confirm Password Reset with Token or OTP',
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['email', 'newPassword'],
+                  properties: {
+                    email: { type: 'string', example: 'user@company.com' },
+                    token: { type: 'string', example: 'rst_123456' },
+                    otp: { type: 'string', example: '123456' },
+                    newPassword: { type: 'string', example: 'newSecurePassword123' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            200: { description: 'Password reset successfully' },
+            400: { description: 'Invalid token or parameters' }
+          }
+        }
+      },
+      '/api/auth/send-otp': {
+        post: {
+          tags: ['Authentication'],
+          summary: 'Send 6-digit OTP code for email verification',
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['email'],
+                  properties: {
+                    email: { type: 'string', example: 'user@company.com' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            200: { description: 'OTP code sent successfully' }
+          }
+        }
+      },
+      '/api/auth/verify-otp': {
+        post: {
+          tags: ['Authentication'],
+          summary: 'Verify OTP code and confirm user email address',
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['email', 'otp'],
+                  properties: {
+                    email: { type: 'string', example: 'user@company.com' },
+                    otp: { type: 'string', example: '123456' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            200: { description: 'Email verified successfully' },
+            400: { description: 'Invalid or expired OTP code' }
+          }
+        }
+      },
+      '/api/auth/verify-email': {
+        post: {
+          tags: ['Authentication'],
+          summary: 'Verify email address via OTP code (Alias)',
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['email', 'otp'],
+                  properties: {
+                    email: { type: 'string', example: 'user@company.com' },
+                    otp: { type: 'string', example: '123456' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            200: { description: 'Email verified successfully' }
+          }
+        }
+      },
+      '/api/auth/refresh-token': {
+        post: {
+          tags: ['Authentication'],
+          summary: 'Refresh JWT Access Token using Refresh Token',
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['refreshToken'],
+                  properties: {
+                    refreshToken: { type: 'string', example: 'refresh_token_sample_string' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            200: { description: 'New access token and refresh token generated' },
+            401: { description: 'Invalid or expired refresh token' }
+          }
+        }
+      },
+      '/api/auth/logout': {
+        post: {
+          tags: ['Authentication'],
+          summary: 'Server Logout & Token Revocation',
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: false,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    refreshToken: { type: 'string', example: 'refresh_token_sample_string' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            200: { description: 'Logged out successfully' }
+          }
+        }
+      },
       '/api/dashboard': {
         get: {
           tags: ['Dashboard'],
@@ -476,6 +622,65 @@ const options = {
           }
         }
       },
+      '/api/profile/locations': {
+        get: {
+          tags: ['Profile & Onboarding'],
+          summary: 'Get Global Countries and Major Cities Locations (Searchable)',
+          parameters: [
+            {
+              in: 'query',
+              name: 'search',
+              schema: { type: 'string' },
+              description: 'Optional search query (e.g. San, London, India)'
+            },
+            {
+              in: 'query',
+              name: 'country',
+              schema: { type: 'string' },
+              description: 'Filter by country name'
+            }
+          ],
+          responses: {
+            200: {
+              description: 'List of matching countries and locations',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean', example: true },
+                      total: { type: 'integer', example: 50 },
+                      countries: {
+                        type: 'array',
+                        items: {
+                          type: 'object',
+                          properties: {
+                            code: { type: 'string', example: 'US' },
+                            name: { type: 'string', example: 'United States' }
+                          }
+                        }
+                      },
+                      data: {
+                        type: 'array',
+                        items: {
+                          type: 'object',
+                          properties: {
+                            id: { type: 'string', example: 'loc_1' },
+                            city: { type: 'string', example: 'San Francisco' },
+                            state: { type: 'string', example: 'CA' },
+                            country: { type: 'string', example: 'United States' },
+                            label: { type: 'string', example: 'San Francisco, CA, USA' }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
       '/api/profile/interests': {
         put: {
           tags: ['Profile & Onboarding'],
@@ -584,6 +789,65 @@ const options = {
           security: [{ bearerAuth: [] }],
           responses: {
             200: { description: 'Onboarding completed' }
+          }
+        }
+      },
+      '/api/courses/my-learning': {
+        get: {
+          tags: ['Courses & My Learning'],
+          summary: 'Get User Enrolled Courses for My Learning Page',
+          description: 'Returns categorized courses (inProgress, savedForLater, completed, all)',
+          security: [{ bearerAuth: [] }],
+          responses: {
+            200: { description: 'Returns My Learning payload' }
+          }
+        }
+      },
+      '/api/courses/{id}/save': {
+        post: {
+          tags: ['Courses & My Learning'],
+          summary: 'Toggle Saving Course for Later',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              in: 'path',
+              name: 'id',
+              required: true,
+              schema: { type: 'string' }
+            }
+          ],
+          responses: {
+            200: { description: 'Toggled save status' }
+          }
+        }
+      },
+      '/api/courses/{id}/complete-lesson': {
+        post: {
+          tags: ['Courses & My Learning'],
+          summary: 'Mark Lesson as Completed & Update Progress',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              in: 'path',
+              name: 'id',
+              required: true,
+              schema: { type: 'string' }
+            }
+          ],
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    lessonId: { type: 'string', example: 'l_1' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            200: { description: 'Lesson completed and progress updated' }
           }
         }
       }

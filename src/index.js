@@ -68,11 +68,17 @@ app.get('/', (req, res) => {
         register: 'POST /api/auth/register',
         logout: 'POST /api/auth/logout',
         forgotPassword: 'POST /api/auth/forgot-password',
+        resetPassword: 'POST /api/auth/reset-password',
+        sendOtp: 'POST /api/auth/send-otp',
+        verifyOtp: 'POST /api/auth/verify-otp',
+        verifyEmail: 'POST /api/auth/verify-email',
+        refreshToken: 'POST /api/auth/refresh-token',
         socialLogin: 'POST /api/auth/social-login'
       },
       profile: {
         getProfile: 'GET /api/profile/me (Protected)',
         updatePersonalInfo: 'PUT /api/profile/personal-info (Protected)',
+        getLocations: 'GET /api/profile/locations?search=',
         getInterestsOptions: 'GET /api/profile/interests-options (Protected)',
         updateInterests: 'PUT /api/profile/interests (Protected)',
         updateGoals: 'PUT /api/profile/goals (Protected)',

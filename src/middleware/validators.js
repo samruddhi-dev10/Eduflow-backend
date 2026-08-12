@@ -34,7 +34,46 @@ const validateLogin = [
   validate
 ];
 
+/**
+ * Reset Password Validation Schema
+ */
+const validateResetPassword = [
+  body('email').isEmail().withMessage('Please provide a valid email address').normalizeEmail(),
+  body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters long'),
+  validate
+];
+
+/**
+ * Send OTP Validation Schema
+ */
+const validateSendOtp = [
+  body('email').isEmail().withMessage('Please provide a valid email address').normalizeEmail(),
+  validate
+];
+
+/**
+ * Verify OTP Validation Schema
+ */
+const validateVerifyOtp = [
+  body('email').isEmail().withMessage('Please provide a valid email address').normalizeEmail(),
+  body('otp').notEmpty().withMessage('OTP code is required'),
+  validate
+];
+
+/**
+ * Refresh Token Validation Schema
+ */
+const validateRefreshToken = [
+  body('refreshToken').notEmpty().withMessage('Refresh token is required'),
+  validate
+];
+
 module.exports = {
   validateRegister,
-  validateLogin
+  validateLogin,
+  validateResetPassword,
+  validateSendOtp,
+  validateVerifyOtp,
+  validateRefreshToken
 };
+
