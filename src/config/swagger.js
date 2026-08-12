@@ -791,6 +791,65 @@ const options = {
             200: { description: 'Onboarding completed' }
           }
         }
+      },
+      '/api/courses/my-learning': {
+        get: {
+          tags: ['Courses & My Learning'],
+          summary: 'Get User Enrolled Courses for My Learning Page',
+          description: 'Returns categorized courses (inProgress, savedForLater, completed, all)',
+          security: [{ bearerAuth: [] }],
+          responses: {
+            200: { description: 'Returns My Learning payload' }
+          }
+        }
+      },
+      '/api/courses/{id}/save': {
+        post: {
+          tags: ['Courses & My Learning'],
+          summary: 'Toggle Saving Course for Later',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              in: 'path',
+              name: 'id',
+              required: true,
+              schema: { type: 'string' }
+            }
+          ],
+          responses: {
+            200: { description: 'Toggled save status' }
+          }
+        }
+      },
+      '/api/courses/{id}/complete-lesson': {
+        post: {
+          tags: ['Courses & My Learning'],
+          summary: 'Mark Lesson as Completed & Update Progress',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              in: 'path',
+              name: 'id',
+              required: true,
+              schema: { type: 'string' }
+            }
+          ],
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    lessonId: { type: 'string', example: 'l_1' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            200: { description: 'Lesson completed and progress updated' }
+          }
+        }
       }
     }
   },
