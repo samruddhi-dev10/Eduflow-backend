@@ -531,6 +531,119 @@ const enrollCourse = async (req, res, next) => {
   }
 };
 
+const demoMyLearningData = {
+  inProgress: [
+    {
+      id: 'cl_1',
+      courseId: 'c_8',
+      title: 'Predictive Modeling with Python',
+      category: 'Advanced Data Science',
+      timeLeft: '2h left',
+      progress: 68,
+      completedLessons: 17,
+      totalLessons: 25,
+      actionButtonText: 'Continue Lesson',
+      lastAccessed: '2 hours ago',
+      thumbnail: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=500&q=80'
+    },
+    {
+      id: 'cl_2',
+      courseId: 'c_11',
+      title: 'Design Systems for Enterprise',
+      category: 'UX/UI Design',
+      timeLeft: '14h left',
+      progress: 12,
+      completedLessons: 3,
+      totalLessons: 24,
+      actionButtonText: 'Resume Module',
+      lastAccessed: 'Yesterday',
+      thumbnail: 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=500&q=80'
+    },
+    {
+      id: 'cl_3',
+      courseId: 'c_5',
+      title: 'Critical Thinking for Leaders',
+      category: 'Professional Development',
+      timeLeft: '45m left',
+      progress: 92,
+      completedLessons: 22,
+      totalLessons: 24,
+      actionButtonText: 'Finish Module',
+      lastAccessed: '3 days ago',
+      thumbnail: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=500&q=80'
+    }
+  ],
+  savedForLater: [
+    {
+      id: 'sv_1',
+      courseId: 'c_15',
+      title: 'Time Mastery for Creatives',
+      category: 'Management',
+      duration: '4.5 hours',
+      thumbnail: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=500&q=80'
+    },
+    {
+      id: 'sv_2',
+      courseId: 'c_10',
+      title: 'Cybersecurity Fundamentals',
+      category: 'Security',
+      duration: '12 hours',
+      thumbnail: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=500&q=80'
+    }
+  ],
+  completed: [
+    {
+      id: 'cp_1',
+      courseId: 'c_20',
+      title: 'Intro to Agile',
+      certificateDate: 'Certified Oct 12',
+      progress: 100,
+      isCertified: true
+    },
+    {
+      id: 'cp_2',
+      courseId: 'c_21',
+      title: 'Modern JS ES6+',
+      certificateDate: 'Certified Sep 28',
+      progress: 100,
+      isCertified: true
+    }
+  ]
+};
+
+const formatMyLearningCard = (item) => {
+  const progress = item.progress || 0;
+  let actionButtonText = item.actionButtonText;
+  if (!actionButtonText) {
+    if (progress >= 85 && progress < 100) {
+      actionButtonText = 'Finish Module';
+    } else if (progress >= 40 && progress < 85) {
+      actionButtonText = 'Resume Module';
+    } else {
+      actionButtonText = 'Continue Lesson';
+    }
+  }
+
+  const hoursLeftCalc = Math.max(1, Math.round((1 - progress / 100) * 10));
+  const timeLeftFormatted = item.timeLeft || (progress >= 100 ? 'Completed' : `${hoursLeftCalc}h left`);
+
+  return {
+    id: item.id || `cl_${item.courseId}`,
+    courseId: item.courseId || item.id,
+    title: item.title,
+    category: item.category || 'General',
+    instructor: item.instructor || 'EduFlow Instructor',
+    progress: progress,
+    completedLessons: item.completedLessons || Math.round((progress / 100) * (item.totalLessons || 20)),
+    totalLessons: item.totalLessons || 20,
+    timeLeft: timeLeftFormatted,
+    actionButtonText: actionButtonText,
+    lastAccessed: item.lastAccessed || 'Recently',
+    thumbnail: item.thumbnail || 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=500&q=80',
+    isCompleted: progress >= 100
+  };
+};
+
 // @desc    Get user's enrolled courses (My Learning payload for Tabs: All, In Progress, Saved for Later, Completed)
 // @route   GET /api/courses/my-learning
 // @access  Private
@@ -541,21 +654,47 @@ const getMyLearning = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
 
+    const { category = 'All', sort = 'Recently Accessed', tab = 'all' } = req.query;
     const dashboard = await getDashboardDataByUserId(userId);
-    const continueLearning = dashboard?.continueLearning || [];
-    const savedForLater = dashboard?.savedForLater || [];
 
-    const inProgress = continueLearning.filter(c => (c.progress || 0) < 100);
-    const completed = continueLearning.filter(c => (c.progress || 0) >= 100);
+    let userEnrolled = (dashboard?.continueLearning || []).map(formatMyLearningCard);
+    let userSaved = dashboard?.savedForLater || [];
+    let userCompleted = (dashboard?.completed || []).concat(userEnrolled.filter(c => c.isCompleted));
+
+    // Fall back to rich demo dataset if user has no enrollments yet
+    if (userEnrolled.length === 0 && userSaved.length === 0 && userCompleted.length === 0) {
+      userEnrolled = demoMyLearningData.inProgress.map(formatMyLearningCard);
+      userSaved = demoMyLearningData.savedForLater;
+      userCompleted = demoMyLearningData.completed;
+    }
+
+    let inProgress = userEnrolled.filter(c => !c.isCompleted);
+
+    // Apply category filtering
+    if (category && category !== 'All') {
+      inProgress = inProgress.filter(c => c.category.toLowerCase().includes(category.toLowerCase()));
+      userSaved = userSaved.filter(c => (c.category || '').toLowerCase().includes(category.toLowerCase()));
+    }
+
+    // Apply sorting
+    if (sort === 'Progress: High to Low') {
+      inProgress.sort((a, b) => b.progress - a.progress);
+    } else if (sort === 'Progress: Low to High') {
+      inProgress.sort((a, b) => a.progress - b.progress);
+    }
+
+    const allCourses = [...inProgress, ...userCompleted];
 
     res.status(200).json({
       success: true,
       data: {
+        activeCount: inProgress.length,
+        showingCountText: `Showing ${allCourses.length} of ${allCourses.length + userSaved.length} courses`,
         inProgress,
-        savedForLater,
-        completed,
-        all: continueLearning,
-        totalEnrolled: continueLearning.length
+        savedForLater: userSaved,
+        completed: userCompleted,
+        all: allCourses,
+        totalEnrolled: allCourses.length
       }
     });
   } catch (error) {
