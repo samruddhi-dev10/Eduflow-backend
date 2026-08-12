@@ -35,8 +35,14 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, curl, Postman)
-    if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
+    // Allow requests with no origin (mobile apps, curl, Postman), allowed list, or any .onrender.com / .vercel.app domain
+    if (
+      !origin || 
+      allowedOrigins.includes(origin) || 
+      origin.endsWith('.onrender.com') || 
+      origin.endsWith('.vercel.app') || 
+      process.env.NODE_ENV !== 'production'
+    ) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
