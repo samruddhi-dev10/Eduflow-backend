@@ -11,11 +11,17 @@ const {
   updateSkills,
   updatePortfolio,
   uploadAvatar,
-  completeOnboarding
+  completeOnboarding,
+  getSettings,
+  updateSettings,
+  updateNotifications
 } = require('../controllers/profileController');
 
 // Profile routes
 router.get('/me', protect, getProfile);
+router.get('/settings', protect, getSettings);
+router.put('/settings', protect, updateSettings);
+router.put('/notifications', protect, updateNotifications);
 router.put('/personal-info', protect, updatePersonalInfo);
 router.get('/interests-options', protect, getInterestOptions);
 router.get('/locations', getLocations); // Location options for create profile page

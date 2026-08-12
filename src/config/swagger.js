@@ -850,6 +850,63 @@ const options = {
             200: { description: 'Lesson completed and progress updated' }
           }
         }
+      },
+      '/api/profile/settings': {
+        get: {
+          tags: ['Profile & Settings'],
+          summary: 'Get All User Settings & Profile Details',
+          security: [{ bearerAuth: [] }],
+          responses: {
+            200: { description: 'Returns settings payload (identity, contactRegion, security, notifications, subscription)' }
+          }
+        },
+        put: {
+          tags: ['Profile & Settings'],
+          summary: 'Save All Profile & Settings Updates',
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    fullName: { type: 'string', example: 'Alex Rivera' },
+                    headline: { type: 'string', example: 'Senior Product Designer & Lifelong Learner' },
+                    timezone: { type: 'string', example: 'Central European Time (CET) - UTC+1' },
+                    phoneNumber: { type: 'string', example: '+1 (555) 000-0000' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            200: { description: 'Settings updated' }
+          }
+        }
+      },
+      '/api/profile/notifications': {
+        put: {
+          tags: ['Profile & Settings'],
+          summary: 'Update Notification Preferences',
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    courseActivity: { type: 'boolean', example: true },
+                    liveSessions: { type: 'boolean', example: true },
+                    newsletter: { type: 'boolean', example: false }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            200: { description: 'Notification preferences updated' }
+          }
+        }
       }
     }
   },
