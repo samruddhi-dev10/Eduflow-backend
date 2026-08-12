@@ -52,6 +52,10 @@ const Course = sequelize.define(
     studentsCount: {
       type: DataTypes.STRING,
       defaultValue: '1k students'
+    },
+    modules: {
+      type: DataTypes.JSON,
+      defaultValue: []
     }
   },
   {

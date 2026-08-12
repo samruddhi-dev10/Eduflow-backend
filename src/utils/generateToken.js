@@ -28,7 +28,37 @@ const verifyToken = (token) => {
   return jwt.verify(token, secret);
 };
 
+/**
+ * Generate a signed refresh token for a given user payload
+ * @param {Object|string} payload - User information or user ID
+ * @param {string} [expiresIn] - Expiration time string (e.g. '7d', '30d')
+ * @returns {string} Signed JWT refresh token
+ */
+const generateRefreshToken = (payload, expiresIn) => {
+  const secret = process.env.REFRESH_TOKEN_SECRET || process.env.JWT_SECRET || 'eduflow_fallback_refresh_secret';
+  const expiry = expiresIn || '7d';
+
+  const data = typeof payload === 'object' ? payload : { id: payload };
+
+  return jwt.sign(data, secret, {
+    expiresIn: expiry
+  });
+};
+
+/**
+ * Verify and decode a refresh token
+ * @param {string} token - Refresh token string
+ * @returns {Object} Decoded payload
+ */
+const verifyRefreshToken = (token) => {
+  const secret = process.env.REFRESH_TOKEN_SECRET || process.env.JWT_SECRET || 'eduflow_fallback_refresh_secret';
+  return jwt.verify(token, secret);
+};
+
 module.exports = {
   generateToken,
-  verifyToken
+  verifyToken,
+  generateRefreshToken,
+  verifyRefreshToken
 };
+

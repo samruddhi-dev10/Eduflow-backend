@@ -49,6 +49,14 @@ const Profile = sequelize.define(
     interests: {
       type: DataTypes.JSON,
       defaultValue: []
+    },
+    goals: {
+      type: DataTypes.JSON,
+      defaultValue: []
+    },
+    skills: {
+      type: DataTypes.JSON,
+      defaultValue: []
     }
   },
   {

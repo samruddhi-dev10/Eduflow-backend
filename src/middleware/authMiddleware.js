@@ -1,5 +1,5 @@
 const { verifyToken } = require('../utils/generateToken');
-const { findUserById, getProfileByUserId } = require('../utils/userStore');
+const { findUserById, getProfileByUserId, isTokenBlacklisted } = require('../utils/userStore');
 
 /**
  * Protect routes - Verification middleware for JWT Bearer token in Authorization header
@@ -14,6 +14,13 @@ const protect = async (req, res, next) => {
     try {
       // Get token from header: "Bearer <token>"
       token = req.headers.authorization.split(' ')[1];
+
+      if (isTokenBlacklisted(token)) {
+        return res.status(401).json({
+          success: false,
+          message: 'Not authorized, token has been logged out'
+        });
+      }
 
       // Verify token
       const decoded = verifyToken(token);
