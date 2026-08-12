@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: eduflow-backend
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 30d
+      - key: REFRESH_TOKEN_SECRET
+        generateValue: true
+      - key: CLIENT_URL
+        value: https://educationflow.onrender.com
