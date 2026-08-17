@@ -567,6 +567,25 @@ const options = {
           }
         }
       },
+      '/api/courses/learn/{id}': {
+        get: {
+          tags: ['Courses'],
+          summary: 'Get Full Course Player & Learn Page Payload for Continue Lesson UI',
+          parameters: [
+            {
+              name: 'id',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' },
+              description: 'Course ID'
+            }
+          ],
+          responses: {
+            200: { description: 'Course player payload with active lesson, video URL, objectives, and playlist returned' },
+            404: { description: 'Course not found' }
+          }
+        }
+      },
       '/api/courses/enroll/{id}': {
         post: {
           tags: ['Courses'],

@@ -678,10 +678,89 @@ const completeLesson = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Get full course player & learn page payload for Continue Lesson UI
+ * @route   GET /api/courses/learn/:id & GET /api/courses/details/:id/learn
+ * @access  Private / Public
+ */
+const getCourseLearn = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    let courseData = null;
+
+    if (isDBConnected()) {
+      const dbCourse = await Course.findByPk(id);
+      if (dbCourse) {
+        courseData = dbCourse.toJSON ? dbCourse.toJSON() : dbCourse;
+      }
+    }
+
+    if (!courseData) {
+      courseData = fallbackCourses.find(c => c.id === id || c.id === `c_${id}`);
+    }
+
+    if (!courseData) {
+      courseData = {
+        id: id,
+        title: 'Design Thinking Foundations',
+        description: 'Welcome to the core module of our Project Management series. In this lesson, we explore the foundational principles of Design Thinking and how it integrates into modern agile workflows. We\'ll cover the five stages: Empathize, Define, Ideate, Prototype, and Test.',
+        category: 'Design Thinking',
+        level: 'Beginner',
+        instructor: 'Marcus Thorne'
+      };
+    }
+
+    const defaultModules = generateDefaultModules(courseData.title);
+
+    const learnPayload = {
+      courseId: courseData.id,
+      courseTitle: courseData.title,
+      category: courseData.category || 'Design Thinking',
+      moduleTitle: 'Introduction',
+      moduleProgress: 'Module 1 of 12',
+      activeLesson: {
+        lessonId: 'l_102',
+        title: `Introduction to ${courseData.title}`,
+        duration: '5:20',
+        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+        description: courseData.description || 'Welcome to the core module of our series. In this lesson, we explore foundational principles and practical workflows.',
+        keyObjectives: [
+          'Define customer pain points through empathy mapping',
+          'Integrate design sprints into product roadmaps',
+          'Validate early prototypes with real user testing'
+        ],
+        proTips: 'Always start with "How Might We" questions before jumping into mental models. It opens up creative problem spaces without premature constraints.'
+      },
+      playlist: [
+        { id: 'l_101', title: 'Course Overview', duration: '3:45', completed: true, isLocked: false },
+        { id: 'l_102', title: 'Introduction', duration: '5:20', completed: false, isLocked: false, active: true },
+        { id: 'l_103', title: 'Understanding Users', duration: '12:10', completed: false, isLocked: false },
+        { id: 'l_104', title: 'Ideation Techniques', duration: '08:45', completed: false, isLocked: false },
+        { id: 'l_105', title: 'Prototyping Labs', duration: '25:00', completed: false, isLocked: true }
+      ],
+      resources: [
+        { id: 'r_1', title: 'Design_Sprint_Guide.pdf', size: '2.4 MB', url: '#' },
+        { id: 'r_2', title: 'Empathy_Map_Template.fig', size: '5.1 MB', url: '#' }
+      ],
+      modules: defaultModules,
+      notes: [],
+      qna: []
+    };
+
+    res.status(200).json({
+      success: true,
+      data: learnPayload
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getCourses,
   getCategories,
   getCourseById,
+  getCourseLearn,
   createCourse,
   enrollCourse,
   getMyLearning,
