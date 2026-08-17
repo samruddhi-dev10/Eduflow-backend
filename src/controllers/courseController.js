@@ -187,51 +187,43 @@ const fallbackCourses = [
   }
 ];
 
-// @desc    Get all courses (with category filter, difficulty level, search, sort, and pagination)
+const sanitizeThumbnail = (url) => {
+  if (!url || typeof url !== 'string' || url.includes('1677442136019')) {
+    return 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=500&q=80';
+  }
+  return url;
+};
+
+// @desc    Get all courses with optional filters (category, level, search, sort, pagination)
 // @route   GET /api/courses
 // @access  Public
 const getCourses = async (req, res, next) => {
   try {
-    const {
-      category = 'All',
-      level = 'All Levels',
-      search = '',
-      sort = 'Popularity',
-      page = 1,
-      limit = 6
-    } = req.query;
-
+    const { category, level, search, sort = 'Popularity', page = 1, limit = 6 } = req.query;
     const pageNum = parseInt(page, 10) || 1;
     const limitNum = parseInt(limit, 10) || 6;
     const offset = (pageNum - 1) * limitNum;
 
     if (isDBConnected()) {
       const whereCondition = {};
-      const dialect = (sequelize && sequelize.getDialect) ? sequelize.getDialect() : 'mysql';
-      const likeOp = dialect === 'postgres' ? Op.iLike : Op.like;
-
       if (category && category !== 'All') {
-        whereCondition.category = { [likeOp]: `%${category}%` };
+        whereCondition.category = { [Op.like]: `%${category}%` };
       }
-
       if (level && level !== 'All Levels') {
         whereCondition.level = level;
       }
-
       if (search && search.trim() !== '') {
-        const queryStr = `%${search.trim()}%`;
+        const q = `%${search.trim()}%`;
         whereCondition[Op.or] = [
-          { title: { [likeOp]: queryStr } },
-          { description: { [likeOp]: queryStr } },
-          { instructor: { [likeOp]: queryStr } },
-          { category: { [likeOp]: queryStr } }
+          { title: { [Op.like]: q } },
+          { description: { [Op.like]: q } },
+          { instructor: { [Op.like]: q } },
+          { category: { [Op.like]: q } }
         ];
       }
 
-      let orderClause = [['createdAt', 'DESC']];
-      if (sort === 'Popularity') {
-        orderClause = [['rating', 'DESC'], ['studentsCount', 'DESC']];
-      } else if (sort === 'Newest') {
+      let orderClause = [['rating', 'DESC']];
+      if (sort === 'Newest') {
         orderClause = [['createdAt', 'DESC']];
       } else if (sort === 'Rating') {
         orderClause = [['rating', 'DESC']];
@@ -245,15 +237,20 @@ const getCourses = async (req, res, next) => {
       });
 
       const totalPages = Math.ceil(count / limitNum) || 1;
+      const sanitizedRows = rows.map(r => {
+        const item = r.toJSON ? r.toJSON() : { ...r };
+        item.thumbnail = sanitizeThumbnail(item.thumbnail);
+        return item;
+      });
 
       return res.status(200).json({
         success: true,
-        count: rows.length,
+        count: sanitizedRows.length,
         totalCourses: count,
         page: pageNum,
         totalPages,
         hasMore: pageNum < totalPages,
-        data: rows
+        data: sanitizedRows
       });
     }
 
@@ -432,6 +429,8 @@ const getCourseById = async (req, res, next) => {
     if (!courseData.modules || courseData.modules.length === 0) {
       courseData.modules = generateDefaultModules(courseData.title);
     }
+
+    courseData.thumbnail = sanitizeThumbnail(courseData.thumbnail);
 
     res.status(200).json({ success: true, data: courseData });
   } catch (error) {
