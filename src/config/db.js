@@ -11,6 +11,12 @@ const storage = process.env.DB_STORAGE || './eduflow.sqlite';
 if (process.env.DATABASE_URL) {
   sequelize = new Sequelize(process.env.DATABASE_URL, {
     logging: process.env.NODE_ENV === 'development' ? console.log : false,
+    pool: {
+      max: 2,
+      min: 0,
+      acquire: 30000,
+      idle: 10000
+    },
     dialectOptions: process.env.DB_SSL === 'true' ? {
       ssl: {
         require: true,
@@ -33,7 +39,13 @@ if (process.env.DATABASE_URL) {
       host: process.env.DB_HOST || 'localhost',
       port: parseInt(process.env.DB_PORT, 10) || (dialect === 'mysql' ? 3306 : 5432),
       dialect: dialect,
-      logging: process.env.NODE_ENV === 'development' ? console.log : false
+      logging: process.env.NODE_ENV === 'development' ? console.log : false,
+      pool: {
+        max: 2,
+        min: 0,
+        acquire: 30000,
+        idle: 10000
+      }
     }
   );
 }
