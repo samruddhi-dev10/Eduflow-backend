@@ -4,6 +4,7 @@ const {
   getCourses,
   getCategories,
   getCourseById,
+  getCourseLearn,
   createCourse,
   enrollCourse,
   getMyLearning,
@@ -19,6 +20,10 @@ router.get('/my-learning', protect, getMyLearning);
 
 // Course Creation
 router.post('/create', protect, createCourse);
+
+// Course Learn / Player Page (Continue Lesson)
+router.get('/learn/:id', getCourseLearn);
+router.get('/details/:id/learn', getCourseLearn);
 
 // Single Course Details
 router.get('/details/:id', getCourseById);

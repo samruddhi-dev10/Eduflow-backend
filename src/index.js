@@ -103,6 +103,7 @@ app.get('/', (req, res) => {
         getCategories: 'GET /api/courses/categories',
         getMyLearning: 'GET /api/courses/my-learning (Protected)',
         getDetails: 'GET /api/courses/details/:id',
+        getLearnPayload: 'GET /api/courses/learn/:id',
         enroll: 'POST /api/courses/enroll/:id (Protected)',
         save: 'POST /api/courses/save/:id (Protected)',
         completeLesson: 'POST /api/courses/complete-lesson/:id (Protected)'
