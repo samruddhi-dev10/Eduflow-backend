@@ -276,9 +276,15 @@ const getProfileByUserId = async (userId) => {
         weeklyCommitment: doc.weeklyCommitment,
         targetRole: doc.targetRole,
         bio: doc.bio,
+        headline: doc.headline || 'Senior Product Designer & Lifelong Learner',
+        timezone: doc.timezone || 'Central European Time (CET) - UTC+1',
+        phoneNumber: doc.phoneNumber || '+1 (555) 000-0000',
         interests: doc.interests || [],
         goals: doc.goals || [],
-        skills: doc.skills || []
+        skills: doc.skills || [],
+        notifications: doc.notifications || { courseActivity: true, liveSessions: true, newsletter: false },
+        securitySettings: doc.securitySettings || { passwordLastChanged: 'Last changed 4 months ago', twoFactorEnabled: true, twoFactorMethod: 'Authenticator App' },
+        subscription: doc.subscription || { planName: 'EduFlow Pro Plan', price: '$19.99 per month', nextBillingDate: 'July 12, 2024', paymentMethod: 'Visa ending in 4242', status: 'Active' }
       };
     } catch (e) {
       return null;
@@ -295,13 +301,18 @@ const getProfileByUserId = async (userId) => {
         email: user.email,
         location: '',
         bio: '',
+        headline: 'Senior Product Designer & Lifelong Learner',
+        timezone: 'Central European Time (CET) - UTC+1',
+        phoneNumber: '+1 (555) 000-0000',
         avatarUrl: user.avatarUrl,
         onboardingStep: 1,
         isOnboarded: false,
         goals: [],
         interests: [],
         skills: [],
-        portfolio: null
+        notifications: { courseActivity: true, liveSessions: true, newsletter: false },
+        securitySettings: { passwordLastChanged: 'Last changed 4 months ago', twoFactorEnabled: true, twoFactorMethod: 'Authenticator App' },
+        subscription: { planName: 'EduFlow Pro Plan', price: '$19.99 per month', nextBillingDate: 'July 12, 2024', paymentMethod: 'Visa ending in 4242', status: 'Active' }
       };
       profiles.set(userId, profile);
     }
@@ -335,9 +346,15 @@ const updateProfileByUserId = async (userId, updates) => {
         weeklyCommitment: doc.weeklyCommitment,
         targetRole: doc.targetRole,
         bio: doc.bio,
+        headline: doc.headline || 'Senior Product Designer & Lifelong Learner',
+        timezone: doc.timezone || 'Central European Time (CET) - UTC+1',
+        phoneNumber: doc.phoneNumber || '+1 (555) 000-0000',
         interests: doc.interests || [],
         goals: doc.goals || [],
-        skills: doc.skills || []
+        skills: doc.skills || [],
+        notifications: doc.notifications || { courseActivity: true, liveSessions: true, newsletter: false },
+        securitySettings: doc.securitySettings || { passwordLastChanged: 'Last changed 4 months ago', twoFactorEnabled: true, twoFactorMethod: 'Authenticator App' },
+        subscription: doc.subscription || { planName: 'EduFlow Pro Plan', price: '$19.99 per month', nextBillingDate: 'July 12, 2024', paymentMethod: 'Visa ending in 4242', status: 'Active' }
       };
     } catch (e) {
       return null;

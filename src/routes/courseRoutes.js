@@ -12,15 +12,21 @@ const {
 } = require('../controllers/courseController');
 const { protect } = require('../middleware/authMiddleware');
 
+// Course Catalog & Metadata
 router.get('/', getCourses);
 router.get('/categories', getCategories);
 router.get('/my-learning', protect, getMyLearning);
-router.get('/:id', getCourseById);
-router.post('/', protect, createCourse);
-router.post('/:id/enroll', protect, enrollCourse);
-router.post('/:id/save', protect, toggleSaveCourse);
-router.post('/:id/complete-lesson', protect, completeLesson);
-router.post('/:id/lessons/:lessonId/complete', protect, completeLesson);
+
+// Course Creation
+router.post('/create', protect, createCourse);
+
+// Single Course Details
+router.get('/details/:id', getCourseById);
+
+// Course Actions
+router.post('/enroll/:id', protect, enrollCourse);
+router.post('/save/:id', protect, toggleSaveCourse);
+router.post('/complete-lesson/:id', protect, completeLesson);
 
 module.exports = router;
 

@@ -57,6 +57,44 @@ const Profile = sequelize.define(
     skills: {
       type: DataTypes.JSON,
       defaultValue: []
+    },
+    headline: {
+      type: DataTypes.STRING,
+      defaultValue: 'Senior Product Designer & Lifelong Learner'
+    },
+    timezone: {
+      type: DataTypes.STRING,
+      defaultValue: 'Central European Time (CET) - UTC+1'
+    },
+    phoneNumber: {
+      type: DataTypes.STRING,
+      defaultValue: '+1 (555) 000-0000'
+    },
+    notifications: {
+      type: DataTypes.JSON,
+      defaultValue: {
+        courseActivity: true,
+        liveSessions: true,
+        newsletter: false
+      }
+    },
+    securitySettings: {
+      type: DataTypes.JSON,
+      defaultValue: {
+        passwordLastChanged: 'Last changed 4 months ago',
+        twoFactorEnabled: true,
+        twoFactorMethod: 'Authenticator App'
+      }
+    },
+    subscription: {
+      type: DataTypes.JSON,
+      defaultValue: {
+        planName: 'EduFlow Pro Plan',
+        price: '$19.99 per month',
+        nextBillingDate: 'July 12, 2024',
+        paymentMethod: 'Visa ending in 4242',
+        status: 'Active'
+      }
     }
   },
   {

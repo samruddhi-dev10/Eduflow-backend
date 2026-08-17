@@ -47,7 +47,7 @@ const INTEREST_CATEGORIES = [
 
 /**
  * Get current user profile & onboarding status
- * GET /api/profile/me
+ * GET /api/profile/my-profile
  */
 const getProfile = async (req, res, next) => {
   try {
@@ -382,6 +382,144 @@ const getLocations = async (req, res, next) => {
   }
 };
 
+/**
+ * Get Full Profile & Settings Data
+ * GET /api/profile/settings
+ */
+const getSettings = async (req, res, next) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    const profile = await getProfileByUserId(userId);
+    if (!profile) {
+      return res.status(404).json({ success: false, message: 'Profile not found' });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        identity: {
+          fullName: profile.fullName || 'Alex Rivera',
+          email: profile.email || 'alex.rivera@edu-flow.com',
+          headline: profile.headline || 'Senior Product Designer & Lifelong Learner',
+          avatarUrl: profile.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&q=80',
+          memberStatus: 'Pro Member',
+          joinedDate: 'Joined June 2023'
+        },
+        contactRegion: {
+          timezone: profile.timezone || 'Central European Time (CET) - UTC+1',
+          phoneNumber: profile.phoneNumber || '+1 (555) 000-0000',
+          location: profile.location || 'Berlin, Germany'
+        },
+        security: profile.securitySettings || {
+          passwordLastChanged: 'Last changed 4 months ago',
+          twoFactorEnabled: true,
+          twoFactorMethod: 'Authenticator App'
+        },
+        notifications: profile.notifications || {
+          courseActivity: true,
+          liveSessions: true,
+          newsletter: false
+        },
+        subscription: profile.subscription || {
+          planName: 'EduFlow Pro Plan',
+          price: '$19.99 per month',
+          nextBillingDate: 'July 12, 2024',
+          paymentMethod: 'Visa ending in 4242',
+          status: 'Active'
+        }
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Update Profile & Settings (Save All Updates)
+ * PUT /api/profile/settings
+ */
+const updateSettings = async (req, res, next) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    const {
+      fullName,
+      email,
+      headline,
+      timezone,
+      phoneNumber,
+      notifications,
+      security,
+      subscription
+    } = req.body;
+
+    const updates = {};
+    if (headline !== undefined) updates.headline = headline;
+    if (timezone !== undefined) updates.timezone = timezone;
+    if (phoneNumber !== undefined) updates.phoneNumber = phoneNumber;
+    if (notifications !== undefined) updates.notifications = notifications;
+    if (security !== undefined) updates.securitySettings = security;
+    if (subscription !== undefined) updates.subscription = subscription;
+
+    if (fullName) {
+      if (isDBConnected()) {
+        const userDoc = await User.findByPk(userId);
+        if (userDoc) await userDoc.update({ fullName });
+      }
+    }
+
+    const updatedProfile = await updateProfileByUserId(userId, updates);
+
+    res.status(200).json({
+      success: true,
+      message: 'Profile & Settings updated successfully',
+      data: updatedProfile
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Update Notification Preferences
+ * PUT /api/profile/notifications
+ */
+const updateNotifications = async (req, res, next) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    const { courseActivity, liveSessions, newsletter } = req.body;
+    const current = await getProfileByUserId(userId);
+    const existingNotifs = current?.notifications || {};
+
+    const updatedNotifs = {
+      courseActivity: courseActivity !== undefined ? courseActivity : existingNotifs.courseActivity ?? true,
+      liveSessions: liveSessions !== undefined ? liveSessions : existingNotifs.liveSessions ?? true,
+      newsletter: newsletter !== undefined ? newsletter : existingNotifs.newsletter ?? false
+    };
+
+    const profile = await updateProfileByUserId(userId, { notifications: updatedNotifs });
+
+    res.status(200).json({
+      success: true,
+      message: 'Notification preferences updated',
+      notifications: updatedNotifs
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getProfile,
   updatePersonalInfo,
@@ -392,6 +530,8 @@ module.exports = {
   updateSkills,
   updatePortfolio,
   uploadAvatar,
-  completeOnboarding
+  completeOnboarding,
+  getSettings,
+  updateSettings,
+  updateNotifications
 };
-
