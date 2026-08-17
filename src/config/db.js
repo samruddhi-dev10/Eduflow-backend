@@ -60,9 +60,13 @@ const connectDB = async () => {
     console.log(`✅ SQL Database Connected (${sequelize.getDialect().toUpperCase()})`);
     console.log(`🗄️  Using DB: ${sequelize.getDialect().toUpperCase()} @ ${process.env.DB_HOST || 'localhost'}:${sequelize.config.port}/${process.env.DB_NAME || 'eduflow'}`);
 
-    // Synchronize models with DB schema (alter: true ensures new columns like totalModules & duration are added automatically)
-    await sequelize.sync({ alter: true });
-    console.log('✅ SQL Models Synchronized');
+    // Synchronize models with DB schema
+    try {
+      await sequelize.sync();
+      console.log('✅ SQL Models Synchronized');
+    } catch (syncError) {
+      console.warn(`⚠️  SQL Schema Sync Warning: ${syncError.message}`);
+    }
     return true;
   } catch (error) {
     console.error(`❌ SQL Connection Error: ${error.message}`);
