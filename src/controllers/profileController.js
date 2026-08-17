@@ -389,7 +389,34 @@ const getLocations = async (req, res, next) => {
  */
 const isIndianRegion = (tz, location) => {
   const str = `${tz || ''} ${location || ''}`.toLowerCase();
-  return /ist|india|kolkata|utc\+5:30|mumbai|delhi|bangalore|chennai|hyderabad/i.test(str);
+  return /ist|india|kolkata|utc\+5:30|utc\+05:30|5:30|5\.5|mumbai|delhi|bangalore|chennai|hyderabad/i.test(str);
+};
+
+/**
+ * Helper to compute localized phone & subscription attributes
+ */
+const getLocalizedAttributes = (profileObj, targetTz, targetLoc) => {
+  const activeTz = targetTz || profileObj?.timezone || 'Central European Time (CET) - UTC+1';
+  const isIndia = isIndianRegion(activeTz, targetLoc || profileObj?.location);
+
+  const defaultPhone = isIndia ? '+91 98765 43210' : '+1 (555) 000-0000';
+  const defaultPrice = isIndia ? '₹1,499 per month' : '$19.99 per month';
+  const defaultPayment = isIndia ? 'UPI / RuPay ending in 4242' : 'Visa ending in 4242';
+
+  let phoneNumber = profileObj?.phoneNumber;
+  if (!phoneNumber || phoneNumber === '+1 (555) 000-0000' || phoneNumber === '+91 98765 43210' || (isIndia && phoneNumber.startsWith('+1')) || (!isIndia && phoneNumber.startsWith('+91'))) {
+    phoneNumber = defaultPhone;
+  }
+
+  const subscription = {
+    planName: profileObj?.subscription?.planName || 'EduFlow Pro Plan',
+    price: defaultPrice,
+    nextBillingDate: profileObj?.subscription?.nextBillingDate || 'July 12, 2024',
+    paymentMethod: defaultPayment,
+    status: profileObj?.subscription?.status || 'Active'
+  };
+
+  return { isIndia, userTz: activeTz, phoneNumber, subscription };
 };
 
 /**
@@ -408,32 +435,7 @@ const getSettings = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Profile not found' });
     }
 
-    const userTz = profile.timezone || 'Central European Time (CET) - UTC+1';
-    const isIndia = isIndianRegion(userTz, profile.location);
-
-    const defaultPhone = isIndia ? '+91 98765 43210' : '+1 (555) 000-0000';
-    const defaultPrice = isIndia ? '₹1,499 per month' : '$19.99 per month';
-    const defaultPayment = isIndia ? 'UPI / RuPay ending in 4242' : 'Visa ending in 4242';
-
-    const phoneToReturn = (profile.phoneNumber && profile.phoneNumber !== '+1 (555) 000-0000' && profile.phoneNumber !== '+91 98765 43210')
-      ? profile.phoneNumber
-      : defaultPhone;
-
-    const subToReturn = profile.subscription ? {
-      ...profile.subscription,
-      price: (profile.subscription.price && profile.subscription.price !== '$19.99 per month' && profile.subscription.price !== '₹1,499 per month')
-        ? profile.subscription.price
-        : defaultPrice,
-      paymentMethod: (profile.subscription.paymentMethod && profile.subscription.paymentMethod !== 'Visa ending in 4242' && profile.subscription.paymentMethod !== 'UPI / RuPay ending in 4242')
-        ? profile.subscription.paymentMethod
-        : defaultPayment
-    } : {
-      planName: 'EduFlow Pro Plan',
-      price: defaultPrice,
-      nextBillingDate: 'July 12, 2024',
-      paymentMethod: defaultPayment,
-      status: 'Active'
-    };
+    const { isIndia, userTz, phoneNumber, subscription } = getLocalizedAttributes(profile);
 
     res.status(200).json({
       success: true,
@@ -448,7 +450,7 @@ const getSettings = async (req, res, next) => {
         },
         contactRegion: {
           timezone: userTz,
-          phoneNumber: phoneToReturn,
+          phoneNumber: phoneNumber,
           location: profile.location || (isIndia ? 'Mumbai, India' : 'Berlin, Germany')
         },
         security: profile.securitySettings || {
@@ -461,7 +463,7 @@ const getSettings = async (req, res, next) => {
           liveSessions: true,
           newsletter: false
         },
-        subscription: subToReturn
+        subscription: subscription
       }
     });
   } catch (error) {
@@ -492,32 +494,17 @@ const updateSettings = async (req, res, next) => {
     } = req.body;
 
     const currentProfile = await getProfileByUserId(userId);
+    const activeTz = timezone || currentProfile?.timezone || '';
+    const defaults = getLocalizedAttributes(currentProfile, activeTz);
+
     const updates = {};
     if (headline !== undefined) updates.headline = headline;
     if (timezone !== undefined) updates.timezone = timezone;
     if (notifications !== undefined) updates.notifications = notifications;
     if (security !== undefined) updates.securitySettings = security;
 
-    const activeTz = timezone || currentProfile?.timezone || '';
-    const isIndia = isIndianRegion(activeTz, currentProfile?.location);
-
-    if (phoneNumber !== undefined) {
-      updates.phoneNumber = phoneNumber;
-    } else if (timezone !== undefined && (!currentProfile?.phoneNumber || currentProfile?.phoneNumber === '+1 (555) 000-0000' || currentProfile?.phoneNumber === '+91 98765 43210')) {
-      updates.phoneNumber = isIndia ? '+91 98765 43210' : '+1 (555) 000-0000';
-    }
-
-    if (subscription !== undefined) {
-      updates.subscription = subscription;
-    } else if (timezone !== undefined) {
-      updates.subscription = {
-        planName: 'EduFlow Pro Plan',
-        price: isIndia ? '₹1,499 per month' : '$19.99 per month',
-        nextBillingDate: 'July 12, 2024',
-        paymentMethod: isIndia ? 'UPI / RuPay ending in 4242' : 'Visa ending in 4242',
-        status: 'Active'
-      };
-    }
+    updates.phoneNumber = phoneNumber || defaults.phoneNumber;
+    updates.subscription = subscription || defaults.subscription;
 
     if (fullName) {
       if (isDBConnected()) {
@@ -527,33 +514,7 @@ const updateSettings = async (req, res, next) => {
     }
 
     const updatedProfile = await updateProfileByUserId(userId, updates) || {};
-
-    const userTz = updatedProfile.timezone || activeTz || 'Central European Time (CET) - UTC+1';
-    const isIndiaRes = isIndianRegion(userTz, updatedProfile.location);
-
-    const defaultPhone = isIndiaRes ? '+91 98765 43210' : '+1 (555) 000-0000';
-    const defaultPrice = isIndiaRes ? '₹1,499 per month' : '$19.99 per month';
-    const defaultPayment = isIndiaRes ? 'UPI / RuPay ending in 4242' : 'Visa ending in 4242';
-
-    const phoneToReturn = (updatedProfile.phoneNumber && updatedProfile.phoneNumber !== '+1 (555) 000-0000' && updatedProfile.phoneNumber !== '+91 98765 43210')
-      ? updatedProfile.phoneNumber
-      : defaultPhone;
-
-    const subToReturn = updatedProfile.subscription ? {
-      ...updatedProfile.subscription,
-      price: (updatedProfile.subscription.price && updatedProfile.subscription.price !== '$19.99 per month' && updatedProfile.subscription.price !== '₹1,499 per month')
-        ? updatedProfile.subscription.price
-        : defaultPrice,
-      paymentMethod: (updatedProfile.subscription.paymentMethod && updatedProfile.subscription.paymentMethod !== 'Visa ending in 4242' && updatedProfile.subscription.paymentMethod !== 'UPI / RuPay ending in 4242')
-        ? updatedProfile.subscription.paymentMethod
-        : defaultPayment
-    } : {
-      planName: 'EduFlow Pro Plan',
-      price: defaultPrice,
-      nextBillingDate: 'July 12, 2024',
-      paymentMethod: defaultPayment,
-      status: 'Active'
-    };
+    const finalAttrs = getLocalizedAttributes(updatedProfile, activeTz);
 
     res.status(200).json({
       success: true,
@@ -568,9 +529,9 @@ const updateSettings = async (req, res, next) => {
           joinedDate: 'Joined June 2023'
         },
         contactRegion: {
-          timezone: userTz,
-          phoneNumber: phoneToReturn,
-          location: updatedProfile.location || (isIndiaRes ? 'Mumbai, India' : 'Berlin, Germany')
+          timezone: finalAttrs.userTz,
+          phoneNumber: finalAttrs.phoneNumber,
+          location: updatedProfile.location || (finalAttrs.isIndia ? 'Mumbai, India' : 'Berlin, Germany')
         },
         security: updatedProfile.securitySettings || {
           passwordLastChanged: 'Last changed 4 months ago',
@@ -582,7 +543,7 @@ const updateSettings = async (req, res, next) => {
           liveSessions: true,
           newsletter: false
         },
-        subscription: subToReturn
+        subscription: finalAttrs.subscription
       }
     });
   } catch (error) {
