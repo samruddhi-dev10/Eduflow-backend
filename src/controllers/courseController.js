@@ -403,21 +403,26 @@ const generateDefaultModules = (title) => [
 ];
 
 // @desc    Get single course by ID with detailed curriculum/modules
-// @route   GET /api/courses/:id
+// @route   GET /api/courses/details?id=... & GET /api/courses/details/:id
 // @access  Public
 const getCourseById = async (req, res, next) => {
   try {
+    const courseId = req.params.id || req.query.id;
+    if (!courseId) {
+      return res.status(400).json({ success: false, message: 'Course ID parameter is required' });
+    }
+
     let courseData = null;
 
     if (isDBConnected()) {
-      const dbCourse = await Course.findByPk(req.params.id);
+      const dbCourse = await Course.findByPk(courseId);
       if (dbCourse) {
         courseData = dbCourse.toJSON ? dbCourse.toJSON() : dbCourse;
       }
     }
 
     if (!courseData) {
-      courseData = fallbackCourses.find(c => c.id === req.params.id || c.id === `c_${req.params.id}`);
+      courseData = fallbackCourses.find(c => c.id === courseId || c.id === `c_${courseId}`);
     }
 
     if (!courseData) {

@@ -26,6 +26,7 @@ router.get('/learn/:id', getCourseLearn);
 router.get('/details/:id/learn', getCourseLearn);
 
 // Single Course Details
+router.get('/details', getCourseById);
 router.get('/details/:id', getCourseById);
 
 // Course Actions
