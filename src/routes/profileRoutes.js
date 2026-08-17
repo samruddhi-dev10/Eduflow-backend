@@ -18,7 +18,7 @@ const {
 } = require('../controllers/profileController');
 
 // Profile routes
-router.get('/me', protect, getProfile);
+router.get('/my-profile', protect, getProfile);
 router.get('/settings', protect, getSettings);
 router.put('/settings', protect, updateSettings);
 router.put('/notifications', protect, updateNotifications);

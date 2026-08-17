@@ -47,7 +47,7 @@ const INTEREST_CATEGORIES = [
 
 /**
  * Get current user profile & onboarding status
- * GET /api/profile/me
+ * GET /api/profile/my-profile
  */
 const getProfile = async (req, res, next) => {
   try {

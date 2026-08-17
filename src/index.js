@@ -76,7 +76,7 @@ app.get('/', (req, res) => {
         socialLogin: 'POST /api/auth/social-login'
       },
       profile: {
-        getProfile: 'GET /api/profile/me (Protected)',
+        getProfile: 'GET /api/profile/my-profile (Protected)',
         updatePersonalInfo: 'PUT /api/profile/personal-info (Protected)',
         getLocations: 'GET /api/profile/locations?search=',
         getInterestsOptions: 'GET /api/profile/interests-options (Protected)',
@@ -99,10 +99,13 @@ app.get('/', (req, res) => {
       },
       courses: {
         getAll: 'GET /api/courses?category=All&level=All+Levels&search=&sort=Popularity&page=1&limit=6',
+        create: 'POST /api/courses/create (Protected)',
         getCategories: 'GET /api/courses/categories',
-        getById: 'GET /api/courses/:id',
-        create: 'POST /api/courses (Protected)',
-        enroll: 'POST /api/courses/:id/enroll (Protected)'
+        getMyLearning: 'GET /api/courses/my-learning (Protected)',
+        getDetails: 'GET /api/courses/details/:id',
+        enroll: 'POST /api/courses/enroll/:id (Protected)',
+        save: 'POST /api/courses/save/:id (Protected)',
+        completeLesson: 'POST /api/courses/complete-lesson/:id (Protected)'
       }
     }
   });

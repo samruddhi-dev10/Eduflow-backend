@@ -477,7 +477,9 @@ const options = {
               }
             }
           }
-        },
+        }
+      },
+      '/api/courses/create': {
         post: {
           tags: ['Courses'],
           summary: 'Create New Course',
@@ -535,7 +537,18 @@ const options = {
           }
         }
       },
-      '/api/courses/{id}': {
+      '/api/courses/my-learning': {
+        get: {
+          tags: ['Courses'],
+          summary: 'Get Logged-In User Enrolled and Saved Courses',
+          security: [{ bearerAuth: [] }],
+          responses: {
+            200: { description: 'User enrolled and saved course lists returned' },
+            401: { description: 'Unauthorized' }
+          }
+        }
+      },
+      '/api/courses/details/{id}': {
         get: {
           tags: ['Courses'],
           summary: 'Get Single Course Details by ID',
@@ -554,7 +567,7 @@ const options = {
           }
         }
       },
-      '/api/courses/{id}/enroll': {
+      '/api/courses/enroll/{id}': {
         post: {
           tags: ['Courses'],
           summary: 'Enroll Logged-In User into Course',
@@ -574,7 +587,27 @@ const options = {
           }
         }
       },
-      '/api/profile/me': {
+      '/api/courses/save/{id}': {
+        post: {
+          tags: ['Courses'],
+          summary: 'Save or Bookmark Course for Logged-In User',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'id',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' },
+              description: 'Course ID to save'
+            }
+          ],
+          responses: {
+            200: { description: 'Course saved/bookmarked successfully' },
+            401: { description: 'Unauthorized' }
+          }
+        }
+      },
+      '/api/profile/my-profile': {
         get: {
           tags: ['Profile & Onboarding'],
           summary: 'Get current user profile & onboarding step',
