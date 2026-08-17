@@ -117,7 +117,7 @@ const fallbackCourses = [
     category: 'Data Science',
     level: 'Advanced',
     instructor: 'Dr. Sophia Vance',
-    thumbnail: 'https://images.unsplash.com/photo-1677442136019-21780efad99a?w=500&q=80',
+    thumbnail: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=500&q=80',
     totalLessons: 60,
     totalModules: 15,
     duration: '35h content',
