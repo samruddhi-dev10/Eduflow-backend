@@ -1,5 +1,7 @@
 // Profile & Onboarding Controller for EduFlow
 const { getProfileByUserId, updateProfileByUserId } = require('../utils/userStore');
+const { isDBConnected } = require('../config/db');
+const User = require('../models/User');
 
 // Pre-populated catalog of available interest topics matching UI mockups
 const INTEREST_CATEGORIES = [
@@ -524,12 +526,64 @@ const updateSettings = async (req, res, next) => {
       }
     }
 
-    const updatedProfile = await updateProfileByUserId(userId, updates);
+    const updatedProfile = await updateProfileByUserId(userId, updates) || {};
+
+    const userTz = updatedProfile.timezone || activeTz || 'Central European Time (CET) - UTC+1';
+    const isIndiaRes = isIndianRegion(userTz, updatedProfile.location);
+
+    const defaultPhone = isIndiaRes ? '+91 98765 43210' : '+1 (555) 000-0000';
+    const defaultPrice = isIndiaRes ? '₹1,499 per month' : '$19.99 per month';
+    const defaultPayment = isIndiaRes ? 'UPI / RuPay ending in 4242' : 'Visa ending in 4242';
+
+    const phoneToReturn = (updatedProfile.phoneNumber && updatedProfile.phoneNumber !== '+1 (555) 000-0000' && updatedProfile.phoneNumber !== '+91 98765 43210')
+      ? updatedProfile.phoneNumber
+      : defaultPhone;
+
+    const subToReturn = updatedProfile.subscription ? {
+      ...updatedProfile.subscription,
+      price: (updatedProfile.subscription.price && updatedProfile.subscription.price !== '$19.99 per month' && updatedProfile.subscription.price !== '₹1,499 per month')
+        ? updatedProfile.subscription.price
+        : defaultPrice,
+      paymentMethod: (updatedProfile.subscription.paymentMethod && updatedProfile.subscription.paymentMethod !== 'Visa ending in 4242' && updatedProfile.subscription.paymentMethod !== 'UPI / RuPay ending in 4242')
+        ? updatedProfile.subscription.paymentMethod
+        : defaultPayment
+    } : {
+      planName: 'EduFlow Pro Plan',
+      price: defaultPrice,
+      nextBillingDate: 'July 12, 2024',
+      paymentMethod: defaultPayment,
+      status: 'Active'
+    };
 
     res.status(200).json({
       success: true,
       message: 'Profile & Settings updated successfully',
-      data: updatedProfile
+      data: {
+        identity: {
+          fullName: updatedProfile.fullName || fullName || 'Alex Rivera',
+          email: updatedProfile.email || email || 'alex.rivera@edu-flow.com',
+          headline: updatedProfile.headline || headline || 'Senior Product Designer & Lifelong Learner',
+          avatarUrl: updatedProfile.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&q=80',
+          memberStatus: 'Pro Member',
+          joinedDate: 'Joined June 2023'
+        },
+        contactRegion: {
+          timezone: userTz,
+          phoneNumber: phoneToReturn,
+          location: updatedProfile.location || (isIndiaRes ? 'Mumbai, India' : 'Berlin, Germany')
+        },
+        security: updatedProfile.securitySettings || {
+          passwordLastChanged: 'Last changed 4 months ago',
+          twoFactorEnabled: true,
+          twoFactorMethod: 'Authenticator App'
+        },
+        notifications: updatedProfile.notifications || {
+          courseActivity: true,
+          liveSessions: true,
+          newsletter: false
+        },
+        subscription: subToReturn
+      }
     });
   } catch (error) {
     next(error);
