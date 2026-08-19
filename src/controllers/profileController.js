@@ -482,56 +482,72 @@ const updateSettings = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
 
-    const {
-      fullName,
-      email,
-      headline,
-      timezone,
-      phoneNumber,
-      notifications,
-      security,
-      subscription
-    } = req.body;
+    const body = req.body || {};
+    const identity = body.identity || {};
+    const contactRegion = body.contactRegion || {};
+
+    const fullName = body.fullName || identity.fullName;
+    const headline = body.headline || identity.headline;
+    const avatarUrl = body.avatarUrl || identity.avatarUrl;
+
+    const timezone = body.timezone || contactRegion.timezone;
+    const phoneNumber = body.phoneNumber || contactRegion.phoneNumber;
+    const location = body.location || contactRegion.location;
+    const bio = body.bio;
+
+    const notifications = body.notifications;
+    const securitySettings = body.security || body.securitySettings;
+    const subscription = body.subscription;
 
     const currentProfile = await getProfileByUserId(userId);
     const activeTz = timezone || currentProfile?.timezone || '';
-    const defaults = getLocalizedAttributes(currentProfile, activeTz);
 
     const updates = {};
     if (headline !== undefined) updates.headline = headline;
     if (timezone !== undefined) updates.timezone = timezone;
+    if (location !== undefined) updates.location = location;
+    if (phoneNumber !== undefined) updates.phoneNumber = phoneNumber;
+    if (bio !== undefined) updates.bio = bio;
+    if (avatarUrl !== undefined) updates.avatarUrl = avatarUrl;
     if (notifications !== undefined) updates.notifications = notifications;
-    if (security !== undefined) updates.securitySettings = security;
+    if (securitySettings !== undefined) updates.securitySettings = securitySettings;
+    if (subscription !== undefined) updates.subscription = subscription;
 
-    updates.phoneNumber = phoneNumber || defaults.phoneNumber;
-    updates.subscription = subscription || defaults.subscription;
-
-    if (fullName) {
+    if (fullName || avatarUrl) {
+      if (fullName) updates.fullName = fullName;
+      if (avatarUrl) updates.avatarUrl = avatarUrl;
       if (isDBConnected()) {
-        const userDoc = await User.findByPk(userId);
-        if (userDoc) await userDoc.update({ fullName });
+        try {
+          const userDoc = await User.findByPk(userId);
+          if (userDoc) {
+            const uUp = {};
+            if (fullName) uUp.fullName = fullName;
+            if (avatarUrl) uUp.avatarUrl = avatarUrl;
+            await userDoc.update(uUp);
+          }
+        } catch (e) {}
       }
     }
 
     const updatedProfile = await updateProfileByUserId(userId, updates) || {};
-    const finalAttrs = getLocalizedAttributes(updatedProfile, activeTz);
+    const finalAttrs = getLocalizedAttributes(updatedProfile, activeTz, location);
 
     res.status(200).json({
       success: true,
       message: 'Profile & Settings updated successfully',
       data: {
         identity: {
-          fullName: updatedProfile.fullName || fullName || 'Alex Rivera',
-          email: updatedProfile.email || email || 'alex.rivera@edu-flow.com',
+          fullName: updatedProfile.fullName || fullName || currentProfile?.fullName || 'Alex Rivera',
+          email: updatedProfile.email || currentProfile?.email || 'alex.rivera@edu-flow.com',
           headline: updatedProfile.headline || headline || 'Senior Product Designer & Lifelong Learner',
-          avatarUrl: updatedProfile.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&q=80',
+          avatarUrl: updatedProfile.avatarUrl || avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&q=80',
           memberStatus: 'Pro Member',
           joinedDate: 'Joined June 2023'
         },
         contactRegion: {
           timezone: finalAttrs.userTz,
           phoneNumber: finalAttrs.phoneNumber,
-          location: updatedProfile.location || (finalAttrs.isIndia ? 'Mumbai, India' : 'Berlin, Germany')
+          location: updatedProfile.location || location || (finalAttrs.isIndia ? 'Mumbai, India' : 'Berlin, Germany')
         },
         security: updatedProfile.securitySettings || {
           passwordLastChanged: 'Last changed 4 months ago',

@@ -39,6 +39,7 @@ router.get('/details/:id/learn', getCourseLearn);
 // Single Course Details
 router.get('/details', getCourseById);
 router.get('/details/:id', getCourseById);
+router.get('/:id', getCourseById);
 
 // Course Actions
 router.post('/enroll/:id', protect, enrollCourse);

@@ -85,7 +85,10 @@ app.get('/', (req, res) => {
         updateSkills: 'PUT /api/profile/skills (Protected)',
         updatePortfolio: 'PUT /api/profile/portfolio (Protected)',
         uploadAvatar: 'POST /api/profile/avatar (Protected)',
-        completeOnboarding: 'POST /api/profile/complete (Protected)'
+        completeOnboarding: 'POST /api/profile/complete (Protected)',
+        getSettings: 'GET /api/profile/settings (Protected)',
+        updateSettings: 'PUT /api/profile/settings (Protected)',
+        updateNotifications: 'PUT /api/profile/notifications (Protected)'
       },
       dashboard: {
         getDashboard: 'GET /api/dashboard (Protected)',
@@ -106,7 +109,18 @@ app.get('/', (req, res) => {
         getLearnPayload: 'GET /api/courses/learn/:id',
         enroll: 'POST /api/courses/enroll/:id (Protected)',
         save: 'POST /api/courses/save/:id (Protected)',
-        completeLesson: 'POST /api/courses/complete-lesson/:id (Protected)'
+        completeLesson: 'POST /api/courses/complete-lesson/:id (Protected)',
+        getNotes: 'GET /api/courses/:id/notes (Protected)',
+        createNote: 'POST /api/courses/:id/notes (Protected)',
+        deleteNote: 'DELETE /api/courses/:id/notes/:noteId (Protected)',
+        getQna: 'GET /api/courses/:id/qna',
+        createQuestion: 'POST /api/courses/:id/qna (Protected)',
+        replyQuestion: 'POST /api/courses/:id/qna/:questionId/reply (Protected)',
+        upvoteQuestion: 'POST /api/courses/:id/qna/:questionId/upvote (Protected)',
+        getResources: 'GET /api/courses/:id/resources',
+        downloadResource: 'GET /api/courses/:id/resources/:resourceId/download',
+        getLessonDetails: 'GET /api/courses/:id/lessons/:lessonId',
+        updateLessonProgress: 'POST /api/courses/:id/lessons/:lessonId/progress (Protected)'
       }
     }
   });

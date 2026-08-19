@@ -268,6 +268,7 @@ const getProfileByUserId = async (userId) => {
         fullName: userDoc ? userDoc.fullName : '',
         email: userDoc ? userDoc.email : '',
         avatarUrl: userDoc ? userDoc.avatarUrl : '',
+        location: doc.location || '',
         onboardingStep: doc.onboardingStep,
         isOnboarded: doc.isOnboarded,
         primaryGoal: doc.primaryGoal,
@@ -338,6 +339,7 @@ const updateProfileByUserId = async (userId, updates) => {
         fullName: userDoc ? userDoc.fullName : '',
         email: userDoc ? userDoc.email : '',
         avatarUrl: userDoc ? userDoc.avatarUrl : '',
+        location: doc.location || '',
         onboardingStep: doc.onboardingStep,
         isOnboarded: doc.isOnboarded,
         primaryGoal: doc.primaryGoal,
@@ -366,6 +368,17 @@ const updateProfileByUserId = async (userId, updates) => {
 
   Object.assign(profile, updates);
   profiles.set(userId, profile);
+
+  if (updates.fullName || updates.avatarUrl) {
+    const memUser = usersById.get(userId);
+    if (memUser) {
+      if (updates.fullName) memUser.fullName = updates.fullName;
+      if (updates.avatarUrl) memUser.avatarUrl = updates.avatarUrl;
+      usersById.set(userId, memUser);
+      if (memUser.email) users.set(memUser.email.toLowerCase(), memUser);
+    }
+  }
+
   return profile;
 };
 

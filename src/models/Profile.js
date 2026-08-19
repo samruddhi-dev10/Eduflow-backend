@@ -46,6 +46,10 @@ const Profile = sequelize.define(
       type: DataTypes.TEXT,
       defaultValue: ''
     },
+    location: {
+      type: DataTypes.STRING,
+      defaultValue: ''
+    },
     interests: {
       type: DataTypes.JSON,
       defaultValue: []
