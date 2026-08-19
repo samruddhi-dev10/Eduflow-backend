@@ -399,6 +399,77 @@ const generateDefaultModules = (title) => [
   }
 ];
 
+const {
+  enrollUserInCourseByUserId,
+  toggleSaveCourseForLaterByUserId,
+  completeLessonInCourseByUserId,
+  getDashboardDataByUserId,
+  findCourseIdFromEnrollments,
+  getNotesByUserAndCourse,
+  addNoteByUserAndCourse,
+  deleteNoteByUserAndCourse,
+  getQnaByCourse,
+  addQuestionToCourse,
+  addReplyToQuestion,
+  upvoteQuestion,
+  getResourcesByCourse,
+  saveLessonProgress,
+  getLessonProgress
+} = require('../utils/userStore');
+
+// Shared Helper to resolve Course by ID consistently across routes (Details, Learn, etc.)
+const resolveCourseData = async (courseId) => {
+  if (!courseId) return null;
+  let targetId = String(courseId).trim();
+  let courseData = null;
+
+  // 1. If ID is an enrollment card ID (e.g. cl_1786951037759), resolve its target courseId
+  if (/^(cl_|sv_|rec_)/.test(targetId)) {
+    const mappedId = await findCourseIdFromEnrollments(targetId);
+    if (mappedId) {
+      targetId = mappedId;
+    }
+  }
+
+  // 2. Try DB lookup by primary key
+  if (isDBConnected()) {
+    try {
+      const dbCourse = await Course.findByPk(targetId);
+      if (dbCourse) {
+        courseData = dbCourse.toJSON ? dbCourse.toJSON() : dbCourse;
+      }
+    } catch (err) {
+      console.warn(`⚠️ [Course Lookup DB Warning] ${err.message}`);
+    }
+  }
+
+  // 3. Try static catalog lookup (checking raw ID, c_ prefix, or stripped prefix)
+  if (!courseData) {
+    const rawId = targetId.replace(/^(c_|cl_|sv_|rec_)/, '');
+    courseData = fallbackCourses.find(c => 
+      c.id === targetId || 
+      c.id === `c_${targetId}` || 
+      c.id === rawId || 
+      c.id === `c_${rawId}`
+    );
+  }
+
+  // 4. Strict handling: NO dummy fallback objects generated!
+  if (!courseData) {
+    console.warn(`❌ [Course Lookup] Course ID '${courseId}' (resolved target: '${targetId}') was NOT FOUND in DB or catalog. (Status: "not_found", returning 404).`);
+    return null;
+  }
+
+  console.log(`✅ [Course Lookup] Resolved course ID '${courseId}' -> '${courseData.id}' successfully ("${courseData.title}")`);
+
+  if (!courseData.modules || courseData.modules.length === 0) {
+    courseData.modules = generateDefaultModules(courseData.title);
+  }
+
+  courseData.thumbnail = sanitizeThumbnail(courseData.thumbnail);
+  return courseData;
+};
+
 // @desc    Get single course by ID with detailed curriculum/modules
 // @route   GET /api/courses/details?id=... & GET /api/courses/details/:id
 // @access  Public
@@ -409,28 +480,11 @@ const getCourseById = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Course ID parameter is required' });
     }
 
-    let courseData = null;
-
-    if (isDBConnected()) {
-      const dbCourse = await Course.findByPk(courseId);
-      if (dbCourse) {
-        courseData = dbCourse.toJSON ? dbCourse.toJSON() : dbCourse;
-      }
-    }
+    const courseData = await resolveCourseData(courseId);
 
     if (!courseData) {
-      courseData = fallbackCourses.find(c => c.id === courseId || c.id === `c_${courseId}`);
+      return res.status(404).json({ success: false, message: `Course not found for ID '${courseId}'` });
     }
-
-    if (!courseData) {
-      return res.status(404).json({ success: false, message: 'Course not found' });
-    }
-
-    if (!courseData.modules || courseData.modules.length === 0) {
-      courseData.modules = generateDefaultModules(courseData.title);
-    }
-
-    courseData.thumbnail = sanitizeThumbnail(courseData.thumbnail);
 
     res.status(200).json({ success: true, data: courseData });
   } catch (error) {
@@ -488,13 +542,6 @@ const createCourse = async (req, res, next) => {
     next(error);
   }
 };
-
-const {
-  enrollUserInCourseByUserId,
-  toggleSaveCourseForLaterByUserId,
-  completeLessonInCourseByUserId,
-  getDashboardDataByUserId
-} = require('../utils/userStore');
 
 // @desc    Enroll user into a course
 // @route   POST /api/courses/:id/enroll
@@ -690,31 +737,17 @@ const completeLesson = async (req, res, next) => {
 const getCourseLearn = async (req, res, next) => {
   try {
     const id = req.params.id;
-    let courseData = null;
-
-    if (isDBConnected()) {
-      const dbCourse = await Course.findByPk(id);
-      if (dbCourse) {
-        courseData = dbCourse.toJSON ? dbCourse.toJSON() : dbCourse;
-      }
-    }
+    const courseData = await resolveCourseData(id);
 
     if (!courseData) {
-      courseData = fallbackCourses.find(c => c.id === id || c.id === `c_${id}`);
+      return res.status(404).json({ success: false, message: `Course not found for ID '${id}'` });
     }
 
-    if (!courseData) {
-      courseData = {
-        id: id,
-        title: 'Design Thinking Foundations',
-        description: 'Welcome to the core module of our Project Management series. In this lesson, we explore the foundational principles of Design Thinking and how it integrates into modern agile workflows. We\'ll cover the five stages: Empathize, Define, Ideate, Prototype, and Test.',
-        category: 'Design Thinking',
-        level: 'Beginner',
-        instructor: 'Marcus Thorne'
-      };
-    }
+    const defaultModules = courseData.modules && courseData.modules.length > 0 ? courseData.modules : generateDefaultModules(courseData.title);
 
-    const defaultModules = generateDefaultModules(courseData.title);
+    const notes = await getNotesByUserAndCourse(req.user?.id, courseData.id);
+    const qna = await getQnaByCourse(courseData.id);
+    const resources = await getResourcesByCourse(courseData.id);
 
     const learnPayload = {
       courseId: courseData.id,
@@ -742,13 +775,10 @@ const getCourseLearn = async (req, res, next) => {
         { id: 'l_104', title: 'Ideation Techniques', duration: '08:45', completed: false, isLocked: false },
         { id: 'l_105', title: 'Prototyping Labs', duration: '25:00', completed: false, isLocked: true }
       ],
-      resources: [
-        { id: 'r_1', title: 'Design_Sprint_Guide.pdf', size: '2.4 MB', url: '#' },
-        { id: 'r_2', title: 'Empathy_Map_Template.fig', size: '5.1 MB', url: '#' }
-      ],
+      resources,
       modules: defaultModules,
-      notes: [],
-      qna: []
+      notes,
+      qna
     };
 
     res.status(200).json({
@@ -760,6 +790,149 @@ const getCourseLearn = async (req, res, next) => {
   }
 };
 
+// --- Notes Handlers ---
+const getCourseNotes = async (req, res, next) => {
+  try {
+    const courseId = req.params.id;
+    const userId = req.user?.id;
+    const notes = await getNotesByUserAndCourse(userId, courseId);
+    res.status(200).json({ success: true, count: notes.length, data: notes });
+  } catch (error) { next(error); }
+};
+
+const createCourseNote = async (req, res, next) => {
+  try {
+    const courseId = req.params.id;
+    const userId = req.user?.id;
+    const { lessonId, timestamp, content } = req.body;
+    if (!content || !content.trim()) {
+      return res.status(400).json({ success: false, message: 'Note content is required' });
+    }
+    const newNote = await addNoteByUserAndCourse(userId, courseId, { lessonId, timestamp, content });
+    res.status(201).json({ success: true, message: 'Note created successfully', data: newNote });
+  } catch (error) { next(error); }
+};
+
+const deleteCourseNote = async (req, res, next) => {
+  try {
+    const { id: courseId, noteId } = req.params;
+    const userId = req.user?.id;
+    const result = await deleteNoteByUserAndCourse(userId, courseId, noteId);
+    res.status(200).json({ success: true, message: 'Note deleted successfully', data: result });
+  } catch (error) { next(error); }
+};
+
+// --- Q&A Handlers ---
+const getCourseQna = async (req, res, next) => {
+  try {
+    const courseId = req.params.id;
+    const qna = await getQnaByCourse(courseId);
+    res.status(200).json({ success: true, count: qna.length, data: qna });
+  } catch (error) { next(error); }
+};
+
+const createCourseQuestion = async (req, res, next) => {
+  try {
+    const courseId = req.params.id;
+    const { question, lessonId } = req.body;
+    if (!question || !question.trim()) {
+      return res.status(400).json({ success: false, message: 'Question text is required' });
+    }
+    const authorName = req.user?.fullName || 'Student Learner';
+    const avatarUrl = req.user?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(authorName)}`;
+    const newQuestion = await addQuestionToCourse(courseId, { authorName, avatarUrl, question, lessonId });
+    res.status(201).json({ success: true, message: 'Question posted successfully', data: newQuestion });
+  } catch (error) { next(error); }
+};
+
+const replyCourseQuestion = async (req, res, next) => {
+  try {
+    const { id: courseId, questionId } = req.params;
+    const { text } = req.body;
+    if (!text || !text.trim()) {
+      return res.status(400).json({ success: false, message: 'Reply text is required' });
+    }
+    const authorName = req.user?.fullName || 'EduFlow Instructor';
+    const avatarUrl = req.user?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(authorName)}`;
+    const isInstructor = req.user?.role === 'instructor' || req.user?.role === 'admin';
+    const reply = await addReplyToQuestion(courseId, questionId, { authorName, avatarUrl, text, isInstructor });
+    if (!reply) {
+      return res.status(404).json({ success: false, message: 'Question not found' });
+    }
+    res.status(201).json({ success: true, message: 'Reply posted successfully', data: reply });
+  } catch (error) { next(error); }
+};
+
+const upvoteCourseQuestion = async (req, res, next) => {
+  try {
+    const { id: courseId, questionId } = req.params;
+    const updated = await upvoteQuestion(courseId, questionId);
+    if (!updated) {
+      return res.status(404).json({ success: false, message: 'Question not found' });
+    }
+    res.status(200).json({ success: true, message: 'Question upvoted', data: updated });
+  } catch (error) { next(error); }
+};
+
+// --- Resources Handlers ---
+const getCourseResources = async (req, res, next) => {
+  try {
+    const courseId = req.params.id;
+    const resources = await getResourcesByCourse(courseId);
+    res.status(200).json({ success: true, count: resources.length, data: resources });
+  } catch (error) { next(error); }
+};
+
+const downloadCourseResource = async (req, res, next) => {
+  try {
+    const { id: courseId, resourceId } = req.params;
+    const resources = await getResourcesByCourse(courseId);
+    const item = resources.find(r => r.id === resourceId);
+    if (!item) {
+      return res.status(404).json({ success: false, message: 'Resource attachment not found' });
+    }
+    res.status(200).json({
+      success: true,
+      message: `Initiated download for ${item.title}`,
+      data: item
+    });
+  } catch (error) { next(error); }
+};
+
+// --- Lesson Details & Progress Handlers ---
+const getLessonDetails = async (req, res, next) => {
+  try {
+    const { id: courseId, lessonId } = req.params;
+    const courseData = await resolveCourseData(courseId);
+    if (!courseData) {
+      return res.status(404).json({ success: false, message: 'Course not found' });
+    }
+    const userProgress = await getLessonProgress(req.user?.id, courseId, lessonId);
+    res.status(200).json({
+      success: true,
+      data: {
+        lessonId,
+        courseId: courseData.id,
+        title: `Lesson ${lessonId}: Core Concepts of ${courseData.title}`,
+        duration: '10:00',
+        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+        description: courseData.description,
+        userProgress
+      }
+    });
+  } catch (error) { next(error); }
+};
+
+const updateLessonProgress = async (req, res, next) => {
+  try {
+    const { id: courseId, lessonId } = req.params;
+    const userId = req.user?.id;
+    const { timestamp, percentage, isCompleted } = req.body;
+    const result = await saveLessonProgress(userId, courseId, lessonId, { timestamp, percentage, isCompleted });
+    res.status(200).json({ success: true, message: 'Progress saved successfully', data: result });
+  } catch (error) { next(error); }
+};
+
 module.exports = {
   getCourses,
   getCategories,
@@ -769,6 +942,17 @@ module.exports = {
   enrollCourse,
   getMyLearning,
   toggleSaveCourse,
-  completeLesson
+  completeLesson,
+  getCourseNotes,
+  createCourseNote,
+  deleteCourseNote,
+  getCourseQna,
+  createCourseQuestion,
+  replyCourseQuestion,
+  upvoteCourseQuestion,
+  getCourseResources,
+  downloadCourseResource,
+  getLessonDetails,
+  updateLessonProgress
 };
 

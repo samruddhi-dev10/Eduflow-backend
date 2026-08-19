@@ -807,6 +807,234 @@ const completeLessonInCourseByUserId = async (userId, courseId, lessonId) => {
 };
 
 /**
+ * Find real courseId mapped from an enrollment card ID (e.g. cl_1786951037759)
+ */
+const findCourseIdFromEnrollments = async (enrollmentId) => {
+  if (!enrollmentId) return null;
+
+  if (isDBConnected()) {
+    try {
+      const allDashboards = await Dashboard.findAll();
+      for (const d of allDashboards) {
+        const cl = Array.isArray(d.continueLearning) ? d.continueLearning : [];
+        const sv = Array.isArray(d.savedForLater) ? d.savedForLater : [];
+        const match = cl.find(item => item.id === enrollmentId) || sv.find(item => item.id === enrollmentId);
+        if (match && match.courseId) {
+          return match.courseId;
+        }
+      }
+    } catch (e) {}
+  }
+
+  for (const [_, dbData] of dashboards.entries()) {
+    const cl = dbData.continueLearning || [];
+    const sv = dbData.savedForLater || [];
+    const match = cl.find(item => item.id === enrollmentId) || sv.find(item => item.id === enrollmentId);
+    if (match && match.courseId) {
+      return match.courseId;
+    }
+  }
+
+  return null;
+};
+
+// In-memory collections for Notes, Q&A, Resources, and Lesson Progress
+const userNotesStore = new Map();     // key: `${userId}_${courseId}` -> Array of notes
+const courseQnaStore = new Map();     // key: courseId -> Array of Q&A objects
+const lessonProgressStore = new Map(); // key: `${userId}_${courseId}_${lessonId}` -> progress object
+
+const getDefaultCourseQna = (courseId) => [
+  {
+    id: 'q_1',
+    authorName: 'Alex Johnson',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex',
+    question: 'How do you effectively handle stakeholder feedback during the Empathize stage?',
+    timestamp: '2 hours ago',
+    upvotes: 14,
+    lessonId: 'l_102',
+    replies: [
+      {
+        id: 'r_1',
+        authorName: 'Marcus Thorne (Instructor)',
+        avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Marcus',
+        text: 'Great question! Focus on active listening and empathy mapping without defending initial prototypes early.',
+        timestamp: '1 hour ago',
+        isInstructor: true
+      }
+    ]
+  },
+  {
+    id: 'q_2',
+    authorName: 'Samantha Wu',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Samantha',
+    question: 'Are the Figma templates in the Resources section free to use for commercial client projects?',
+    timestamp: '1 day ago',
+    upvotes: 8,
+    lessonId: 'l_101',
+    replies: [
+      {
+        id: 'r_2',
+        authorName: 'Marcus Thorne (Instructor)',
+        avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Marcus',
+        text: 'Yes! All downloadable templates in EduFlow are royalty-free under MIT license.',
+        timestamp: '18 hours ago',
+        isInstructor: true
+      }
+    ]
+  }
+];
+
+const getDefaultCourseResources = (courseId) => [
+  {
+    id: 'res_1',
+    title: 'Design_Sprint_Framework_Guide.pdf',
+    description: 'Comprehensive 40-page blueprint for executing 5-day design sprints.',
+    fileType: 'PDF Document',
+    size: '4.2 MB',
+    downloadUrl: `/api/courses/${courseId}/resources/res_1/download`,
+    updatedAt: '2024-05-10'
+  },
+  {
+    id: 'res_2',
+    title: 'Empathy_Mapping_UI_Kit.fig',
+    description: 'Figma component library with customizable persona cards & customer journey maps.',
+    fileType: 'Figma File',
+    size: '12.8 MB',
+    downloadUrl: `/api/courses/${courseId}/resources/res_2/download`,
+    updatedAt: '2024-05-12'
+  },
+  {
+    id: 'res_3',
+    title: 'User_Testing_Script_Template.docx',
+    description: 'Ready-to-use interview script and scoring rubrics for usability testing sessions.',
+    fileType: 'Word Document',
+    size: '1.1 MB',
+    downloadUrl: `/api/courses/${courseId}/resources/res_3/download`,
+    updatedAt: '2024-05-15'
+  }
+];
+
+// Notes methods
+const getNotesByUserAndCourse = async (userId, courseId) => {
+  const key = `${userId || 'guest'}_${courseId}`;
+  return userNotesStore.get(key) || [
+    {
+      id: 'nt_1',
+      lessonId: 'l_102',
+      timestamp: '02:45',
+      content: 'Key takeaway: Always formulate "How Might We" questions before jumping into prototyping.',
+      createdAt: new Date().toISOString()
+    }
+  ];
+};
+
+const addNoteByUserAndCourse = async (userId, courseId, { lessonId, timestamp, content }) => {
+  const key = `${userId || 'guest'}_${courseId}`;
+  const notes = userNotesStore.get(key) || [];
+  const newNote = {
+    id: `nt_${Date.now()}`,
+    lessonId: lessonId || 'l_102',
+    timestamp: timestamp || '00:00',
+    content: content || '',
+    createdAt: new Date().toISOString()
+  };
+  notes.unshift(newNote);
+  userNotesStore.set(key, notes);
+  return newNote;
+};
+
+const deleteNoteByUserAndCourse = async (userId, courseId, noteId) => {
+  const key = `${userId || 'guest'}_${courseId}`;
+  let notes = userNotesStore.get(key) || [];
+  notes = notes.filter(n => n.id !== noteId);
+  userNotesStore.set(key, notes);
+  return { success: true, remainingCount: notes.length };
+};
+
+// Q&A methods
+const getQnaByCourse = async (courseId) => {
+  if (!courseQnaStore.has(courseId)) {
+    courseQnaStore.set(courseId, getDefaultCourseQna(courseId));
+  }
+  return courseQnaStore.get(courseId);
+};
+
+const addQuestionToCourse = async (courseId, { authorName, avatarUrl, question, lessonId }) => {
+  const qnaList = await getQnaByCourse(courseId);
+  const newQuestion = {
+    id: `q_${Date.now()}`,
+    authorName: authorName || 'Student Learner',
+    avatarUrl: avatarUrl || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Student',
+    question: question || '',
+    timestamp: 'Just now',
+    upvotes: 0,
+    lessonId: lessonId || 'l_102',
+    replies: []
+  };
+  qnaList.unshift(newQuestion);
+  courseQnaStore.set(courseId, qnaList);
+  return newQuestion;
+};
+
+const addReplyToQuestion = async (courseId, questionId, { authorName, avatarUrl, text, isInstructor }) => {
+  const qnaList = await getQnaByCourse(courseId);
+  const target = qnaList.find(q => q.id === questionId);
+  if (!target) return null;
+  const newReply = {
+    id: `r_${Date.now()}`,
+    authorName: authorName || 'Instructor',
+    avatarUrl: avatarUrl || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Instructor',
+    text: text || '',
+    timestamp: 'Just now',
+    isInstructor: isInstructor || false
+  };
+  if (!target.replies) target.replies = [];
+  target.replies.push(newReply);
+  return newReply;
+};
+
+const upvoteQuestion = async (courseId, questionId) => {
+  const qnaList = await getQnaByCourse(courseId);
+  const target = qnaList.find(q => q.id === questionId);
+  if (!target) return null;
+  target.upvotes = (target.upvotes || 0) + 1;
+  return target;
+};
+
+// Resources methods
+const getResourcesByCourse = async (courseId) => {
+  return getDefaultCourseResources(courseId);
+};
+
+// Video Progress methods
+const saveLessonProgress = async (userId, courseId, lessonId, { timestamp, percentage, isCompleted }) => {
+  const key = `${userId || 'guest'}_${courseId}_${lessonId}`;
+  const progressData = {
+    userId: userId || 'guest',
+    courseId,
+    lessonId,
+    timestamp: timestamp || '00:00',
+    percentage: percentage || 0,
+    isCompleted: isCompleted || false,
+    updatedAt: new Date().toISOString()
+  };
+  lessonProgressStore.set(key, progressData);
+  return progressData;
+};
+
+const getLessonProgress = async (userId, courseId, lessonId) => {
+  const key = `${userId || 'guest'}_${courseId}_${lessonId}`;
+  return lessonProgressStore.get(key) || {
+    userId: userId || 'guest',
+    courseId,
+    lessonId,
+    timestamp: '00:00',
+    percentage: 0,
+    isCompleted: false
+  };
+};
+
+/**
  * Token Blacklist methods for Logout
  */
 const blacklistToken = (token) => {
@@ -829,6 +1057,17 @@ module.exports = {
   enrollUserInCourseByUserId,
   toggleSaveCourseForLaterByUserId,
   completeLessonInCourseByUserId,
+  findCourseIdFromEnrollments,
+  getNotesByUserAndCourse,
+  addNoteByUserAndCourse,
+  deleteNoteByUserAndCourse,
+  getQnaByCourse,
+  addQuestionToCourse,
+  addReplyToQuestion,
+  upvoteQuestion,
+  getResourcesByCourse,
+  saveLessonProgress,
+  getLessonProgress,
   verifyUserPassword,
   saveOtp,
   verifyOtp,
