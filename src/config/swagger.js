@@ -27,6 +27,7 @@ const options = {
       }
     },
     paths: {
+      /* ==================== AUTHENTICATION ==================== */
       '/api/auth/login': {
         post: {
           tags: ['Authentication'],
@@ -78,53 +79,6 @@ const options = {
           }
         }
       },
-      '/api/auth/forgot-password': {
-        post: {
-          tags: ['Authentication'],
-          summary: 'Request Password Reset Link',
-          requestBody: {
-            required: true,
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  required: ['email'],
-                  properties: {
-                    email: { type: 'string', example: 'name@company.com' }
-                  }
-                }
-              }
-            }
-          },
-          responses: {
-            200: { description: 'Password reset email sent' }
-          }
-        }
-      },
-      '/api/auth/social-login': {
-        post: {
-          tags: ['Authentication'],
-          summary: 'Social OAuth Login (Google / Apple / LinkedIn)',
-          requestBody: {
-            required: true,
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  required: ['provider', 'providerToken'],
-                  properties: {
-                    provider: { type: 'string', example: 'Google' },
-                    providerToken: { type: 'string', example: 'oauth_token_from_google_sdk' }
-                  }
-                }
-              }
-            }
-          },
-          responses: {
-            200: { description: 'Social login successful' }
-          }
-        }
-      },
       '/api/auth/register': {
         post: {
           tags: ['Authentication'],
@@ -147,6 +101,29 @@ const options = {
           },
           responses: {
             201: { description: 'User registered successfully' }
+          }
+        }
+      },
+      '/api/auth/forgot-password': {
+        post: {
+          tags: ['Authentication'],
+          summary: 'Request Password Reset Link',
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['email'],
+                  properties: {
+                    email: { type: 'string', example: 'name@company.com' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            200: { description: 'Password reset email sent' }
           }
         }
       },
@@ -273,6 +250,30 @@ const options = {
           }
         }
       },
+      '/api/auth/social-login': {
+        post: {
+          tags: ['Authentication'],
+          summary: 'Social OAuth Login (Google / Apple / LinkedIn)',
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['provider', 'providerToken'],
+                  properties: {
+                    provider: { type: 'string', example: 'Google' },
+                    providerToken: { type: 'string', example: 'oauth_token_from_google_sdk' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            200: { description: 'Social login successful' }
+          }
+        }
+      },
       '/api/auth/logout': {
         post: {
           tags: ['Authentication'],
@@ -296,6 +297,8 @@ const options = {
           }
         }
       },
+
+      /* ==================== DASHBOARD ==================== */
       '/api/dashboard': {
         get: {
           tags: ['Dashboard'],
@@ -388,244 +391,8 @@ const options = {
           }
         }
       },
-      '/api/courses': {
-        get: {
-          tags: ['Courses'],
-          summary: 'Get Filtered, Searchable & Paginated Course Catalog',
-          description: 'Returns a list of courses with support for category filter, difficulty level, search query, sorting, and pagination.',
-          parameters: [
-            {
-              name: 'category',
-              in: 'query',
-              required: false,
-              schema: { type: 'string', default: 'All' },
-              description: 'Filter courses by category (e.g., Data Science, Design, Business, Finance, Development, Analytics, or All)'
-            },
-            {
-              name: 'level',
-              in: 'query',
-              required: false,
-              schema: { type: 'string', default: 'All Levels' },
-              description: 'Filter courses by difficulty level (All Levels, Beginner, Intermediate, Advanced)'
-            },
-            {
-              name: 'sort',
-              in: 'query',
-              required: false,
-              schema: { type: 'string', default: 'Popularity' },
-              description: 'Sort order (Popularity, Newest, Rating)'
-            },
-            {
-              name: 'search',
-              in: 'query',
-              required: false,
-              schema: { type: 'string' },
-              description: 'Search string to match title, description, instructor, or category'
-            },
-            {
-              name: 'page',
-              in: 'query',
-              required: false,
-              schema: { type: 'integer', default: 1 },
-              description: 'Page number for pagination'
-            },
-            {
-              name: 'limit',
-              in: 'query',
-              required: false,
-              schema: { type: 'integer', default: 6 },
-              description: 'Number of items per page'
-            }
-          ],
-          responses: {
-            200: {
-              description: 'Successfully fetched course list with pagination metadata',
-              content: {
-                'application/json': {
-                  schema: {
-                    type: 'object',
-                    properties: {
-                      success: { type: 'boolean', example: true },
-                      count: { type: 'integer', example: 6 },
-                      totalCourses: { type: 'integer', example: 12 },
-                      page: { type: 'integer', example: 1 },
-                      totalPages: { type: 'integer', example: 2 },
-                      hasMore: { type: 'boolean', example: true },
-                      data: {
-                        type: 'array',
-                        items: {
-                          type: 'object',
-                          properties: {
-                            id: { type: 'string', example: '756e898a-949a-41a5-90bb-035b625ac95a' },
-                            title: { type: 'string', example: 'Advanced Machine Learning with Python' },
-                            description: { type: 'string', example: 'Master deep learning architectures and reinforcement learning.' },
-                            category: { type: 'string', example: 'Data Science' },
-                            level: { type: 'string', example: 'Advanced' },
-                            instructor: { type: 'string', example: 'Dr. Sarah Jenkins' },
-                            thumbnail: { type: 'string', example: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=500&q=80' },
-                            totalLessons: { type: 'integer', example: 48 },
-                            totalModules: { type: 'integer', example: 12 },
-                            duration: { type: 'string', example: '24h content' },
-                            rating: { type: 'number', example: 4.9 },
-                            studentsCount: { type: 'string', example: '4.5k students' }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      '/api/courses/create': {
-        post: {
-          tags: ['Courses'],
-          summary: 'Create New Course',
-          security: [{ bearerAuth: [] }],
-          requestBody: {
-            required: true,
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  required: ['title'],
-                  properties: {
-                    title: { type: 'string', example: 'Node.js Microservices Architecture' },
-                    description: { type: 'string', example: 'Build scalable enterprise REST APIs.' },
-                    category: { type: 'string', example: 'Development' },
-                    level: { type: 'string', example: 'Intermediate' },
-                    instructor: { type: 'string', example: 'Alex Johnson' },
-                    thumbnail: { type: 'string', example: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=500&q=80' },
-                    totalLessons: { type: 'integer', example: 30 },
-                    totalModules: { type: 'integer', example: 10 },
-                    duration: { type: 'string', example: '18h content' }
-                  }
-                }
-              }
-            }
-          },
-          responses: {
-            201: { description: 'Course created successfully' }
-          }
-        }
-      },
-      '/api/courses/categories': {
-        get: {
-          tags: ['Courses'],
-          summary: 'Get List of All Available Course Categories',
-          responses: {
-            200: {
-              description: 'List of unique course categories',
-              content: {
-                'application/json': {
-                  schema: {
-                    type: 'object',
-                    properties: {
-                      success: { type: 'boolean', example: true },
-                      data: {
-                        type: 'array',
-                        items: { type: 'string' },
-                        example: ['All', 'Data Science', 'Design', 'Business', 'Finance', 'Development', 'Analytics']
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      '/api/courses/my-learning': {
-        get: {
-          tags: ['Courses'],
-          summary: 'Get Logged-In User Enrolled and Saved Courses',
-          security: [{ bearerAuth: [] }],
-          responses: {
-            200: { description: 'User enrolled and saved course lists returned' },
-            401: { description: 'Unauthorized' }
-          }
-        }
-      },
-      '/api/courses/details/{id}': {
-        get: {
-          tags: ['Courses'],
-          summary: 'Get Single Course Details by ID',
-          parameters: [
-            {
-              name: 'id',
-              in: 'path',
-              required: true,
-              schema: { type: 'string' },
-              description: 'Course ID'
-            }
-          ],
-          responses: {
-            200: { description: 'Course detail object returned' },
-            404: { description: 'Course not found' }
-          }
-        }
-      },
-      '/api/courses/learn/{id}': {
-        get: {
-          tags: ['Courses'],
-          summary: 'Get Full Course Player & Learn Page Payload for Continue Lesson UI',
-          parameters: [
-            {
-              name: 'id',
-              in: 'path',
-              required: true,
-              schema: { type: 'string' },
-              description: 'Course ID'
-            }
-          ],
-          responses: {
-            200: { description: 'Course player payload with active lesson, video URL, objectives, and playlist returned' },
-            404: { description: 'Course not found' }
-          }
-        }
-      },
-      '/api/courses/enroll/{id}': {
-        post: {
-          tags: ['Courses'],
-          summary: 'Enroll Logged-In User into Course',
-          security: [{ bearerAuth: [] }],
-          parameters: [
-            {
-              name: 'id',
-              in: 'path',
-              required: true,
-              schema: { type: 'string' },
-              description: 'Course ID to enroll in'
-            }
-          ],
-          responses: {
-            200: { description: 'Successfully enrolled in course' },
-            401: { description: 'Unauthorized' }
-          }
-        }
-      },
-      '/api/courses/save/{id}': {
-        post: {
-          tags: ['Courses'],
-          summary: 'Save or Bookmark Course for Logged-In User',
-          security: [{ bearerAuth: [] }],
-          parameters: [
-            {
-              name: 'id',
-              in: 'path',
-              required: true,
-              schema: { type: 'string' },
-              description: 'Course ID to save'
-            }
-          ],
-          responses: {
-            200: { description: 'Course saved/bookmarked successfully' },
-            401: { description: 'Unauthorized' }
-          }
-        }
-      },
+
+      /* ==================== PROFILE & ONBOARDING ==================== */
       '/api/profile/my-profile': {
         get: {
           tags: ['Profile & Onboarding'],
@@ -664,16 +431,6 @@ const options = {
           }
         }
       },
-      '/api/profile/interests-options': {
-        get: {
-          tags: ['Profile & Onboarding'],
-          summary: 'Step 3: Get Available Interest Categories & Topics',
-          security: [{ bearerAuth: [] }],
-          responses: {
-            200: { description: 'List of interest options returned' }
-          }
-        }
-      },
       '/api/profile/locations': {
         get: {
           tags: ['Profile & Onboarding'],
@@ -693,43 +450,17 @@ const options = {
             }
           ],
           responses: {
-            200: {
-              description: 'List of matching countries and locations',
-              content: {
-                'application/json': {
-                  schema: {
-                    type: 'object',
-                    properties: {
-                      success: { type: 'boolean', example: true },
-                      total: { type: 'integer', example: 50 },
-                      countries: {
-                        type: 'array',
-                        items: {
-                          type: 'object',
-                          properties: {
-                            code: { type: 'string', example: 'US' },
-                            name: { type: 'string', example: 'United States' }
-                          }
-                        }
-                      },
-                      data: {
-                        type: 'array',
-                        items: {
-                          type: 'object',
-                          properties: {
-                            id: { type: 'string', example: 'loc_1' },
-                            city: { type: 'string', example: 'San Francisco' },
-                            state: { type: 'string', example: 'CA' },
-                            country: { type: 'string', example: 'United States' },
-                            label: { type: 'string', example: 'San Francisco, CA, USA' }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
+            200: { description: 'List of matching countries and locations' }
+          }
+        }
+      },
+      '/api/profile/interests-options': {
+        get: {
+          tags: ['Profile & Onboarding'],
+          summary: 'Step 3: Get Available Interest Categories & Topics',
+          security: [{ bearerAuth: [] }],
+          responses: {
+            200: { description: 'List of interest options returned' }
           }
         }
       },
@@ -812,6 +543,41 @@ const options = {
           }
         }
       },
+      '/api/profile/portfolio': {
+        put: {
+          tags: ['Profile & Onboarding'],
+          summary: 'Save Portfolio & Professional Work Links',
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    portfolioUrl: { type: 'string', example: 'https://myportfolio.dev' },
+                    githubUrl: { type: 'string', example: 'https://github.com/username' },
+                    linkedinUrl: { type: 'string', example: 'https://linkedin.com/in/username' },
+                    projects: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          title: { type: 'string', example: 'E-Commerce Platform' },
+                          link: { type: 'string', example: 'https://github.com/username/project' }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            200: { description: 'Portfolio links updated' }
+          }
+        }
+      },
       '/api/profile/avatar': {
         post: {
           tags: ['Profile & Onboarding'],
@@ -844,72 +610,13 @@ const options = {
           }
         }
       },
-      '/api/courses/my-learning': {
-        get: {
-          tags: ['Courses & My Learning'],
-          summary: 'Get User Enrolled Courses for My Learning Page',
-          description: 'Returns categorized courses (inProgress, savedForLater, completed, all)',
-          security: [{ bearerAuth: [] }],
-          responses: {
-            200: { description: 'Returns My Learning payload' }
-          }
-        }
-      },
-      '/api/courses/{id}/save': {
-        post: {
-          tags: ['Courses & My Learning'],
-          summary: 'Toggle Saving Course for Later',
-          security: [{ bearerAuth: [] }],
-          parameters: [
-            {
-              in: 'path',
-              name: 'id',
-              required: true,
-              schema: { type: 'string' }
-            }
-          ],
-          responses: {
-            200: { description: 'Toggled save status' }
-          }
-        }
-      },
-      '/api/courses/{id}/complete-lesson': {
-        post: {
-          tags: ['Courses & My Learning'],
-          summary: 'Mark Lesson as Completed & Update Progress',
-          security: [{ bearerAuth: [] }],
-          parameters: [
-            {
-              in: 'path',
-              name: 'id',
-              required: true,
-              schema: { type: 'string' }
-            }
-          ],
-          requestBody: {
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    lessonId: { type: 'string', example: 'l_1' }
-                  }
-                }
-              }
-            }
-          },
-          responses: {
-            200: { description: 'Lesson completed and progress updated' }
-          }
-        }
-      },
       '/api/profile/settings': {
         get: {
           tags: ['Profile & Settings'],
           summary: 'Get All User Settings & Profile Details',
           security: [{ bearerAuth: [] }],
           responses: {
-            200: { description: 'Returns settings payload (identity, contactRegion, security, notifications, subscription)' }
+            200: { description: 'Returns settings payload' }
           }
         },
         put: {
@@ -923,7 +630,7 @@ const options = {
                   type: 'object',
                   properties: {
                     fullName: { type: 'string', example: 'Alex Rivera' },
-                    headline: { type: 'string', example: 'Senior Product Designer & Lifelong Learner' },
+                    headline: { type: 'string', example: 'Senior Product Designer' },
                     timezone: { type: 'string', example: 'Central European Time (CET) - UTC+1' },
                     phoneNumber: { type: 'string', example: '+1 (555) 000-0000' }
                   }
@@ -957,6 +664,431 @@ const options = {
           },
           responses: {
             200: { description: 'Notification preferences updated' }
+          }
+        }
+      },
+
+      /* ==================== COURSES & CATALOG ==================== */
+      '/api/courses': {
+        get: {
+          tags: ['Courses'],
+          summary: 'Get Filtered, Searchable & Paginated Course Catalog',
+          description: 'Returns a list of courses with support for category filter, difficulty level, search query, sorting, and pagination.',
+          parameters: [
+            {
+              name: 'category',
+              in: 'query',
+              required: false,
+              schema: { type: 'string', default: 'All' },
+              description: 'Filter courses by category'
+            },
+            {
+              name: 'level',
+              in: 'query',
+              required: false,
+              schema: { type: 'string', default: 'All Levels' },
+              description: 'Filter courses by difficulty level'
+            },
+            {
+              name: 'sort',
+              in: 'query',
+              required: false,
+              schema: { type: 'string', default: 'Popularity' },
+              description: 'Sort order (Popularity, Newest, Rating)'
+            },
+            {
+              name: 'search',
+              in: 'query',
+              required: false,
+              schema: { type: 'string' },
+              description: 'Search string'
+            },
+            {
+              name: 'page',
+              in: 'query',
+              required: false,
+              schema: { type: 'integer', default: 1 }
+            },
+            {
+              name: 'limit',
+              in: 'query',
+              required: false,
+              schema: { type: 'integer', default: 6 }
+            }
+          ],
+          responses: {
+            200: { description: 'Course list retrieved successfully' }
+          }
+        }
+      },
+      '/api/courses/categories': {
+        get: {
+          tags: ['Courses'],
+          summary: 'Get List of All Available Course Categories',
+          responses: {
+            200: { description: 'List of unique course categories' }
+          }
+        }
+      },
+      '/api/courses/my-learning': {
+        get: {
+          tags: ['Courses'],
+          summary: 'Get User Enrolled and Saved Courses (My Learning Page)',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { name: 'category', in: 'query', schema: { type: 'string', default: 'All' } },
+            { name: 'sort', in: 'query', schema: { type: 'string', default: 'Recently Accessed' } },
+            { name: 'tab', in: 'query', schema: { type: 'string', default: 'all' } }
+          ],
+          responses: {
+            200: { description: 'Categorized enrolled/saved/completed course lists returned' },
+            401: { description: 'Unauthorized' }
+          }
+        }
+      },
+      '/api/courses/create': {
+        post: {
+          tags: ['Courses'],
+          summary: 'Create New Course',
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['title'],
+                  properties: {
+                    title: { type: 'string', example: 'Node.js Microservices Architecture' },
+                    description: { type: 'string', example: 'Build scalable enterprise REST APIs.' },
+                    category: { type: 'string', example: 'Development' },
+                    level: { type: 'string', example: 'Intermediate' },
+                    instructor: { type: 'string', example: 'Alex Johnson' },
+                    thumbnail: { type: 'string', example: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=500&q=80' },
+                    totalLessons: { type: 'integer', example: 30 },
+                    totalModules: { type: 'integer', example: 10 },
+                    duration: { type: 'string', example: '18h content' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            201: { description: 'Course created successfully' }
+          }
+        }
+      },
+      '/api/courses/details/{id}': {
+        get: {
+          tags: ['Courses'],
+          summary: 'Get Single Course Details by ID',
+          parameters: [
+            {
+              name: 'id',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' },
+              description: 'Course ID'
+            }
+          ],
+          responses: {
+            200: { description: 'Course detail object returned' },
+            404: { description: 'Course not found' }
+          }
+        }
+      },
+      '/api/courses/learn/{id}': {
+        get: {
+          tags: ['Courses'],
+          summary: 'Get Full Course Player & Learn Page Payload',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'id',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' },
+              description: 'Course ID'
+            }
+          ],
+          responses: {
+            200: { description: 'Course player payload with active lesson, video URL, modules, and notes returned' },
+            404: { description: 'Course not found' }
+          }
+        }
+      },
+      '/api/courses/enroll/{id}': {
+        post: {
+          tags: ['Courses'],
+          summary: 'Enroll Logged-In User into Course',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'id',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' }
+            }
+          ],
+          responses: {
+            200: { description: 'Successfully enrolled in course' },
+            401: { description: 'Unauthorized' }
+          }
+        }
+      },
+      '/api/courses/save/{id}': {
+        post: {
+          tags: ['Courses'],
+          summary: 'Save or Bookmark Course for Logged-In User',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'id',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' }
+            }
+          ],
+          responses: {
+            200: { description: 'Course save status toggled successfully' },
+            401: { description: 'Unauthorized' }
+          }
+        }
+      },
+      '/api/courses/complete-lesson/{id}': {
+        post: {
+          tags: ['Courses'],
+          summary: 'Mark Lesson as Completed & Update Progress',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'id',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' },
+              description: 'Course ID'
+            }
+          ],
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    lessonId: { type: 'string', example: 'l_1' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            200: { description: 'Lesson completed and user progress updated' }
+          }
+        }
+      },
+
+      /* ==================== COURSE NOTES, Q&A, RESOURCES & LESSONS ==================== */
+      '/api/courses/{id}/notes': {
+        get: {
+          tags: ['Course Interactive Features'],
+          summary: 'Get Notes Created by User for a Course',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'Course ID' }
+          ],
+          responses: {
+            200: { description: 'Array of user notes returned' }
+          }
+        },
+        post: {
+          tags: ['Course Interactive Features'],
+          summary: 'Add a New Note to a Course',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'Course ID' }
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['content'],
+                  properties: {
+                    lessonId: { type: 'string', example: 'l_1' },
+                    timestamp: { type: 'string', example: '03:45' },
+                    content: { type: 'string', example: 'Remember to check customer empathy mapping diagrams.' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            201: { description: 'Note created successfully' }
+          }
+        }
+      },
+      '/api/courses/{id}/notes/{noteId}': {
+        delete: {
+          tags: ['Course Interactive Features'],
+          summary: 'Delete a Course Note',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'Course ID' },
+            { name: 'noteId', in: 'path', required: true, schema: { type: 'string' }, description: 'Note ID' }
+          ],
+          responses: {
+            200: { description: 'Note deleted successfully' }
+          }
+        }
+      },
+      '/api/courses/{id}/qna': {
+        get: {
+          tags: ['Course Interactive Features'],
+          summary: 'Get Q&A Discussion Forum Threads for a Course',
+          parameters: [
+            { name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'Course ID' }
+          ],
+          responses: {
+            200: { description: 'Q&A discussion threads array returned' }
+          }
+        },
+        post: {
+          tags: ['Course Interactive Features'],
+          summary: 'Post a New Question in Course Q&A',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'Course ID' }
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['question'],
+                  properties: {
+                    lessonId: { type: 'string', example: 'l_1' },
+                    question: { type: 'string', example: 'How do we handle state persistence in SSR?' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            201: { description: 'Question posted successfully' }
+          }
+        }
+      },
+      '/api/courses/{id}/qna/{questionId}/reply': {
+        post: {
+          tags: ['Course Interactive Features'],
+          summary: 'Post a Reply to a Q&A Question',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'Course ID' },
+            { name: 'questionId', in: 'path', required: true, schema: { type: 'string' }, description: 'Question ID' }
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['text'],
+                  properties: {
+                    text: { type: 'string', example: 'Use React Query or SWR for client cache sync.' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            201: { description: 'Reply posted successfully' },
+            404: { description: 'Question not found' }
+          }
+        }
+      },
+      '/api/courses/{id}/qna/{questionId}/upvote': {
+        post: {
+          tags: ['Course Interactive Features'],
+          summary: 'Upvote a Q&A Question Thread',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'Course ID' },
+            { name: 'questionId', in: 'path', required: true, schema: { type: 'string' }, description: 'Question ID' }
+          ],
+          responses: {
+            200: { description: 'Question upvoted successfully' },
+            404: { description: 'Question not found' }
+          }
+        }
+      },
+      '/api/courses/{id}/resources': {
+        get: {
+          tags: ['Course Interactive Features'],
+          summary: 'Get List of Course Resources & File Attachments',
+          parameters: [
+            { name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'Course ID' }
+          ],
+          responses: {
+            200: { description: 'Resource attachments array returned' }
+          }
+        }
+      },
+      '/api/courses/{id}/resources/{resourceId}/download': {
+        get: {
+          tags: ['Course Interactive Features'],
+          summary: 'Download a Specific Course Resource File',
+          parameters: [
+            { name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'Course ID' },
+            { name: 'resourceId', in: 'path', required: true, schema: { type: 'string' }, description: 'Resource ID' }
+          ],
+          responses: {
+            200: { description: 'Resource download payload returned' },
+            404: { description: 'Resource attachment not found' }
+          }
+        }
+      },
+      '/api/courses/{id}/lessons/{lessonId}': {
+        get: {
+          tags: ['Course Interactive Features'],
+          summary: 'Get Detailed Lesson Info & User Playback Progress',
+          parameters: [
+            { name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'Course ID' },
+            { name: 'lessonId', in: 'path', required: true, schema: { type: 'string' }, description: 'Lesson ID' }
+          ],
+          responses: {
+            200: { description: 'Lesson details object returned' },
+            404: { description: 'Course not found' }
+          }
+        }
+      },
+      '/api/courses/{id}/lessons/{lessonId}/progress': {
+        post: {
+          tags: ['Course Interactive Features'],
+          summary: 'Update Video Playback Progress & Timestamp for a Lesson',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'Course ID' },
+            { name: 'lessonId', in: 'path', required: true, schema: { type: 'string' }, description: 'Lesson ID' }
+          ],
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    timestamp: { type: 'number', example: 145 },
+                    percentage: { type: 'number', example: 85 },
+                    isCompleted: { type: 'boolean', example: true }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            200: { description: 'Progress saved successfully' }
           }
         }
       }
