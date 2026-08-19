@@ -778,10 +778,48 @@ const options = {
           }
         }
       },
+      '/api/courses/details': {
+        get: {
+          tags: ['Courses'],
+          summary: 'Get Single Course Details by Query Parameter (Alias)',
+          parameters: [
+            {
+              name: 'id',
+              in: 'query',
+              required: true,
+              schema: { type: 'string' },
+              description: 'Course ID'
+            }
+          ],
+          responses: {
+            200: { description: 'Course detail object returned' },
+            404: { description: 'Course not found' }
+          }
+        }
+      },
       '/api/courses/details/{id}': {
         get: {
           tags: ['Courses'],
           summary: 'Get Single Course Details by ID',
+          parameters: [
+            {
+              name: 'id',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' },
+              description: 'Course ID'
+            }
+          ],
+          responses: {
+            200: { description: 'Course detail object returned' },
+            404: { description: 'Course not found' }
+          }
+        }
+      },
+      '/api/courses/{id}': {
+        get: {
+          tags: ['Courses'],
+          summary: 'Get Single Course Details by ID (Direct Path Alias)',
           parameters: [
             {
               name: 'id',
@@ -813,6 +851,26 @@ const options = {
           ],
           responses: {
             200: { description: 'Course player payload with active lesson, video URL, modules, and notes returned' },
+            404: { description: 'Course not found' }
+          }
+        }
+      },
+      '/api/courses/details/{id}/learn': {
+        get: {
+          tags: ['Courses'],
+          summary: 'Get Full Course Player Payload (Alias Path)',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'id',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' },
+              description: 'Course ID'
+            }
+          ],
+          responses: {
+            200: { description: 'Course player payload returned' },
             404: { description: 'Course not found' }
           }
         }
