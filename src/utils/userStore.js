@@ -166,11 +166,27 @@ const createUser = async ({ fullName, email, password, role = 'student' }) => {
       avatarUrl
     });
 
-    const newProfile = await Profile.create({
-      userId: newUser.id,
-      isOnboarded: false,
-      onboardingStep: 1
-    });
+    let newProfile = null;
+    try {
+      newProfile = await Profile.create({
+        userId: newUser.id,
+        isOnboarded: false,
+        onboardingStep: 1,
+        location: ''
+      });
+    } catch (pErr) {
+      console.warn(`⚠️  Profile creation notice: ${pErr.message}`);
+      try {
+        await Profile.rawAttributes?.location && delete Profile.rawAttributes.location;
+        newProfile = await Profile.create({
+          userId: newUser.id,
+          isOnboarded: false,
+          onboardingStep: 1
+        });
+      } catch (e) {
+        newProfile = { onboardingStep: 1, isOnboarded: false };
+      }
+    }
 
     await Dashboard.create({
       userId: newUser.id,

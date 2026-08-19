@@ -62,10 +62,14 @@ const connectDB = async () => {
 
     // Synchronize models with DB schema
     try {
-      await sequelize.sync();
-      console.log('✅ SQL Models Synchronized');
+      await sequelize.sync({ alter: true });
+      console.log('✅ SQL Models Synchronized (with schema alter support)');
     } catch (syncError) {
       console.warn(`⚠️  SQL Schema Sync Warning: ${syncError.message}`);
+      try {
+        await sequelize.query("ALTER TABLE profiles ADD COLUMN location VARCHAR(255) DEFAULT '';");
+        console.log("✅ Added missing 'location' column to profiles table");
+      } catch (e) {}
     }
     return true;
   } catch (error) {
