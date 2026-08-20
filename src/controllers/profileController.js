@@ -401,12 +401,15 @@ const getLocalizedAttributes = (profileObj, targetTz, targetLoc) => {
 
   let phoneNumber = profileObj?.phoneNumber || '';
 
+  const rawSub = profileObj?.subscription || {};
+  const isMockSub = rawSub.planName === 'EduFlow Pro Plan' || rawSub.nextBillingDate === 'July 12, 2024' || rawSub.paymentMethod === 'Visa ending in 4242';
+
   const subscription = {
-    planName: profileObj?.subscription?.planName || 'Free Plan',
-    price: profileObj?.subscription?.price || 'Free',
-    nextBillingDate: profileObj?.subscription?.nextBillingDate || '',
-    paymentMethod: profileObj?.subscription?.paymentMethod || '',
-    status: profileObj?.subscription?.status || 'Active'
+    planName: isMockSub ? 'Free Plan' : (rawSub.planName || 'Free Plan'),
+    price: isMockSub ? 'Free' : (rawSub.price || 'Free'),
+    nextBillingDate: isMockSub ? '' : (rawSub.nextBillingDate || ''),
+    paymentMethod: isMockSub ? '' : (rawSub.paymentMethod || ''),
+    status: rawSub.status || 'Active'
   };
 
   return { isIndia, userTz: activeTz, phoneNumber, subscription };
@@ -430,6 +433,15 @@ const getSettings = async (req, res, next) => {
 
     const { isIndia, userTz, phoneNumber, subscription } = getLocalizedAttributes(profile);
 
+    const rawSec = profile.securitySettings || {};
+    const isMockSec = rawSec.passwordLastChanged === 'Last changed 4 months ago' || rawSec.twoFactorMethod === 'Authenticator App';
+
+    const security = {
+      passwordLastChanged: isMockSec ? '' : (rawSec.passwordLastChanged || ''),
+      twoFactorEnabled: isMockSec ? false : Boolean(rawSec.twoFactorEnabled),
+      twoFactorMethod: isMockSec ? '' : (rawSec.twoFactorMethod || '')
+    };
+
     res.status(200).json({
       success: true,
       data: {
@@ -438,7 +450,7 @@ const getSettings = async (req, res, next) => {
           email: profile.email || '',
           headline: profile.headline || '',
           avatarUrl: profile.avatarUrl || '',
-          memberStatus: profile.subscription?.planName || 'Free Member',
+          memberStatus: subscription?.planName || 'Free Member',
           joinedDate: req.user?.createdAt ? `Joined ${new Date(req.user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}` : ''
         },
         contactRegion: {
@@ -446,11 +458,7 @@ const getSettings = async (req, res, next) => {
           phoneNumber: phoneNumber,
           location: profile.location || ''
         },
-        security: profile.securitySettings || {
-          passwordLastChanged: '',
-          twoFactorEnabled: false,
-          twoFactorMethod: ''
-        },
+        security: security,
         notifications: profile.notifications || {
           courseActivity: true,
           liveSessions: true,
