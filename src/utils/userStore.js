@@ -349,7 +349,13 @@ const updateProfileByUserId = async (userId, updates) => {
       } else {
         await doc.update(updates);
       }
-      const userDoc = await User.findByPk(userId);
+      let userDoc = await User.findByPk(userId);
+      if (userDoc && (updates.fullName || updates.avatarUrl)) {
+        const userUpdates = {};
+        if (updates.fullName) userUpdates.fullName = updates.fullName;
+        if (updates.avatarUrl) userUpdates.avatarUrl = updates.avatarUrl;
+        await userDoc.update(userUpdates);
+      }
       return {
         id: userId,
         fullName: userDoc ? userDoc.fullName : '',
