@@ -1,4 +1,6 @@
 // Profile & Onboarding Controller for EduFlow
+const fs = require('fs');
+const path = require('path');
 const { getProfileByUserId, updateProfileByUserId } = require('../utils/userStore');
 const { isDBConnected } = require('../config/db');
 const User = require('../models/User');
@@ -306,15 +308,50 @@ const uploadAvatar = async (req, res, next) => {
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
-    const seed = req.body?.seed || req.body?.name || userId;
-    const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(seed)}`;
 
-    const profile = await updateProfileByUserId(userId, { avatarUrl });
+    const { avatarUrl, avatar, file, image, seed } = req.body || {};
+    let finalAvatarUrl = '';
+
+    // 1. Direct Image URL provided
+    if (avatarUrl && typeof avatarUrl === 'string' && (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://'))) {
+      finalAvatarUrl = avatarUrl;
+    }
+    // 2. Actual Photo File upload via Base64 Data URI (e.g. data:image/png;base64,...)
+    else if ((avatar || file || image) && typeof (avatar || file || image) === 'string' && (avatar || file || image).startsWith('data:image')) {
+      const base64Data = avatar || file || image;
+      const matches = base64Data.match(/^data:image\/([a-zA-Z0-9]+);base64,(.+)$/);
+      if (matches) {
+        const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
+        const buffer = Buffer.from(matches[2], 'base64');
+        
+        const uploadsDir = path.join(__dirname, '../../uploads/avatars');
+        if (!fs.existsSync(uploadsDir)) {
+          fs.mkdirSync(uploadsDir, { recursive: true });
+        }
+        
+        const fileName = `avatar_${userId}_${Date.now()}.${ext}`;
+        const filePath = path.join(uploadsDir, fileName);
+        fs.writeFileSync(filePath, buffer);
+        
+        const host = req.get('host') || 'localhost:5000';
+        const protocol = req.protocol || 'http';
+        finalAvatarUrl = `${protocol}://${host}/uploads/avatars/${fileName}`;
+      }
+    }
+
+    // 3. Fallback: Seed / DiceBear SVG generator
+    if (!finalAvatarUrl) {
+      const avatarSeed = seed || req.body?.name || userId;
+      finalAvatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(avatarSeed)}`;
+    }
+
+    const profile = await updateProfileByUserId(userId, { avatarUrl: finalAvatarUrl });
 
     res.status(200).json({
       success: true,
       message: 'Profile picture uploaded successfully',
-      avatarUrl
+      avatarUrl: finalAvatarUrl,
+      data: profile
     });
   } catch (error) {
     next(error);
