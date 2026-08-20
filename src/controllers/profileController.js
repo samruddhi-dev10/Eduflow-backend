@@ -396,23 +396,16 @@ const isIndianRegion = (tz, location) => {
  * Helper to compute localized phone & subscription attributes
  */
 const getLocalizedAttributes = (profileObj, targetTz, targetLoc) => {
-  const activeTz = targetTz || profileObj?.timezone || 'Central European Time (CET) - UTC+1';
+  const activeTz = targetTz || profileObj?.timezone || '';
   const isIndia = isIndianRegion(activeTz, targetLoc || profileObj?.location);
 
-  const defaultPhone = isIndia ? '+91 98765 43210' : '+1 (555) 000-0000';
-  const defaultPrice = isIndia ? '₹1,499 per month' : '$19.99 per month';
-  const defaultPayment = isIndia ? 'UPI / RuPay ending in 4242' : 'Visa ending in 4242';
-
-  let phoneNumber = profileObj?.phoneNumber;
-  if (!phoneNumber || phoneNumber === '+1 (555) 000-0000' || phoneNumber === '+91 98765 43210' || (isIndia && phoneNumber.startsWith('+1')) || (!isIndia && phoneNumber.startsWith('+91'))) {
-    phoneNumber = defaultPhone;
-  }
+  let phoneNumber = profileObj?.phoneNumber || '';
 
   const subscription = {
-    planName: profileObj?.subscription?.planName || 'EduFlow Pro Plan',
-    price: defaultPrice,
-    nextBillingDate: profileObj?.subscription?.nextBillingDate || 'July 12, 2024',
-    paymentMethod: defaultPayment,
+    planName: profileObj?.subscription?.planName || 'Free Plan',
+    price: profileObj?.subscription?.price || 'Free',
+    nextBillingDate: profileObj?.subscription?.nextBillingDate || '',
+    paymentMethod: profileObj?.subscription?.paymentMethod || '',
     status: profileObj?.subscription?.status || 'Active'
   };
 
@@ -441,22 +434,22 @@ const getSettings = async (req, res, next) => {
       success: true,
       data: {
         identity: {
-          fullName: profile.fullName || 'Alex Rivera',
-          email: profile.email || 'alex.rivera@edu-flow.com',
-          headline: profile.headline || 'Senior Product Designer & Lifelong Learner',
-          avatarUrl: profile.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&q=80',
-          memberStatus: 'Pro Member',
-          joinedDate: 'Joined June 2023'
+          fullName: profile.fullName || 'Learner',
+          email: profile.email || '',
+          headline: profile.headline || '',
+          avatarUrl: profile.avatarUrl || '',
+          memberStatus: profile.subscription?.planName || 'Free Member',
+          joinedDate: req.user?.createdAt ? `Joined ${new Date(req.user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}` : ''
         },
         contactRegion: {
           timezone: userTz,
           phoneNumber: phoneNumber,
-          location: profile.location || (isIndia ? 'Mumbai, India' : 'Berlin, Germany')
+          location: profile.location || ''
         },
         security: profile.securitySettings || {
-          passwordLastChanged: 'Last changed 4 months ago',
-          twoFactorEnabled: true,
-          twoFactorMethod: 'Authenticator App'
+          passwordLastChanged: '',
+          twoFactorEnabled: false,
+          twoFactorMethod: ''
         },
         notifications: profile.notifications || {
           courseActivity: true,
@@ -537,22 +530,22 @@ const updateSettings = async (req, res, next) => {
       message: 'Profile & Settings updated successfully',
       data: {
         identity: {
-          fullName: updatedProfile.fullName || fullName || currentProfile?.fullName || 'Alex Rivera',
-          email: updatedProfile.email || currentProfile?.email || 'alex.rivera@edu-flow.com',
-          headline: updatedProfile.headline || headline || 'Senior Product Designer & Lifelong Learner',
-          avatarUrl: updatedProfile.avatarUrl || avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&q=80',
-          memberStatus: 'Pro Member',
-          joinedDate: 'Joined June 2023'
+          fullName: updatedProfile.fullName || fullName || currentProfile?.fullName || 'Learner',
+          email: updatedProfile.email || currentProfile?.email || '',
+          headline: updatedProfile.headline || headline || currentProfile?.headline || '',
+          avatarUrl: updatedProfile.avatarUrl || avatarUrl || currentProfile?.avatarUrl || '',
+          memberStatus: updatedProfile.subscription?.planName || 'Free Member',
+          joinedDate: req.user?.createdAt ? `Joined ${new Date(req.user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}` : ''
         },
         contactRegion: {
           timezone: finalAttrs.userTz,
           phoneNumber: finalAttrs.phoneNumber,
-          location: updatedProfile.location || location || (finalAttrs.isIndia ? 'Mumbai, India' : 'Berlin, Germany')
+          location: updatedProfile.location || location || ''
         },
         security: updatedProfile.securitySettings || {
-          passwordLastChanged: 'Last changed 4 months ago',
-          twoFactorEnabled: true,
-          twoFactorMethod: 'Authenticator App'
+          passwordLastChanged: '',
+          twoFactorEnabled: false,
+          twoFactorMethod: ''
         },
         notifications: updatedProfile.notifications || {
           courseActivity: true,

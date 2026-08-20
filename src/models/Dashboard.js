@@ -19,9 +19,9 @@ const Dashboard = sequelize.define(
     stats: {
       type: DataTypes.JSON,
       defaultValue: {
-        currentStreakDays: 12,
-        timeLearnedHours: 24.5,
-        coursesCompleted: 8
+        currentStreakDays: 0,
+        timeLearnedHours: 0,
+        coursesCompleted: 0
       }
     },
     liveClasses: {

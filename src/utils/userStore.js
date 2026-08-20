@@ -293,15 +293,15 @@ const getProfileByUserId = async (userId) => {
         weeklyCommitment: doc.weeklyCommitment,
         targetRole: doc.targetRole,
         bio: doc.bio,
-        headline: doc.headline || 'Senior Product Designer & Lifelong Learner',
-        timezone: doc.timezone || 'Central European Time (CET) - UTC+1',
-        phoneNumber: doc.phoneNumber || '+1 (555) 000-0000',
+        headline: doc.headline || '',
+        timezone: doc.timezone || '',
+        phoneNumber: doc.phoneNumber || '',
         interests: doc.interests || [],
         goals: doc.goals || [],
         skills: doc.skills || [],
         notifications: doc.notifications || { courseActivity: true, liveSessions: true, newsletter: false },
-        securitySettings: doc.securitySettings || { passwordLastChanged: 'Last changed 4 months ago', twoFactorEnabled: true, twoFactorMethod: 'Authenticator App' },
-        subscription: doc.subscription || { planName: 'EduFlow Pro Plan', price: '$19.99 per month', nextBillingDate: 'July 12, 2024', paymentMethod: 'Visa ending in 4242', status: 'Active' }
+        securitySettings: doc.securitySettings || { passwordLastChanged: '', twoFactorEnabled: false, twoFactorMethod: '' },
+        subscription: doc.subscription || { planName: 'Free Plan', price: 'Free', nextBillingDate: '', paymentMethod: '', status: 'Active' }
       };
     } catch (e) {
       return null;
@@ -318,9 +318,9 @@ const getProfileByUserId = async (userId) => {
         email: user.email,
         location: '',
         bio: '',
-        headline: 'Senior Product Designer & Lifelong Learner',
-        timezone: 'Central European Time (CET) - UTC+1',
-        phoneNumber: '+1 (555) 000-0000',
+        headline: '',
+        timezone: '',
+        phoneNumber: '',
         avatarUrl: user.avatarUrl,
         onboardingStep: 1,
         isOnboarded: false,
@@ -328,8 +328,8 @@ const getProfileByUserId = async (userId) => {
         interests: [],
         skills: [],
         notifications: { courseActivity: true, liveSessions: true, newsletter: false },
-        securitySettings: { passwordLastChanged: 'Last changed 4 months ago', twoFactorEnabled: true, twoFactorMethod: 'Authenticator App' },
-        subscription: { planName: 'EduFlow Pro Plan', price: '$19.99 per month', nextBillingDate: 'July 12, 2024', paymentMethod: 'Visa ending in 4242', status: 'Active' }
+        securitySettings: { passwordLastChanged: '', twoFactorEnabled: false, twoFactorMethod: '' },
+        subscription: { planName: 'Free Plan', price: 'Free', nextBillingDate: '', paymentMethod: '', status: 'Active' }
       };
       profiles.set(userId, profile);
     }
@@ -370,15 +370,15 @@ const updateProfileByUserId = async (userId, updates) => {
         weeklyCommitment: doc.weeklyCommitment,
         targetRole: doc.targetRole,
         bio: doc.bio,
-        headline: doc.headline || 'Senior Product Designer & Lifelong Learner',
-        timezone: doc.timezone || 'Central European Time (CET) - UTC+1',
-        phoneNumber: doc.phoneNumber || '+1 (555) 000-0000',
+        headline: doc.headline || '',
+        timezone: doc.timezone || '',
+        phoneNumber: doc.phoneNumber || '',
         interests: doc.interests || [],
         goals: doc.goals || [],
         skills: doc.skills || [],
         notifications: doc.notifications || { courseActivity: true, liveSessions: true, newsletter: false },
-        securitySettings: doc.securitySettings || { passwordLastChanged: 'Last changed 4 months ago', twoFactorEnabled: true, twoFactorMethod: 'Authenticator App' },
-        subscription: doc.subscription || { planName: 'EduFlow Pro Plan', price: '$19.99 per month', nextBillingDate: 'July 12, 2024', paymentMethod: 'Visa ending in 4242', status: 'Active' }
+        securitySettings: doc.securitySettings || { passwordLastChanged: '', twoFactorEnabled: false, twoFactorMethod: '' },
+        subscription: doc.subscription || { planName: 'Free Plan', price: 'Free', nextBillingDate: '', paymentMethod: '', status: 'Active' }
       };
     } catch (e) {
       return null;
@@ -460,7 +460,7 @@ const getDashboardDataByUserId = async (userId) => {
     },
     banner: {
       welcomeMessage: `Welcome back, ${firstName}!`,
-      motivationalText: "You're doing great! You completed 4 lessons this week. Keep the momentum going to finish Project Management by Friday."
+      motivationalText: "Welcome to Eduflow! Explore courses and start your learning journey today."
     },
     stats: dbData.stats,
     liveClasses: dbData.liveClasses,
