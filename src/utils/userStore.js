@@ -258,6 +258,34 @@ const createUser = async ({ fullName, email, password, role = 'student' }) => {
   return { user, profile };
 };
 
+const sanitizeProfile = (rawProfile) => {
+  if (!rawProfile) return null;
+
+  const headline = (rawProfile.headline === 'Senior Product Designer & Lifelong Learner') ? '' : (rawProfile.headline || '');
+
+  const rawSec = rawProfile.securitySettings || {};
+  const isMockSec = rawSec.passwordLastChanged === 'Last changed 4 months ago' || rawSec.twoFactorMethod === 'Authenticator App';
+  const securitySettings = isMockSec ? { passwordLastChanged: '', twoFactorEnabled: false, twoFactorMethod: '' } : rawSec;
+
+  const rawSub = rawProfile.subscription || {};
+  const isMockSub = rawSub.planName === 'EduFlow Pro Plan' || rawSub.nextBillingDate === 'July 12, 2024' || rawSub.paymentMethod === 'Visa ending in 4242' || rawSub.paymentMethod?.includes('4242');
+  const subscription = isMockSub ? { planName: 'Free Plan', price: 'Free', nextBillingDate: '', paymentMethod: '', status: 'Active' } : rawSub;
+
+  const phoneNumber = (rawProfile.phoneNumber === '+1 (555) 000-0000' || rawProfile.phoneNumber === '+91 98765 43210') ? '' : (rawProfile.phoneNumber || '');
+  const location = (rawProfile.location === 'Mumbai, India' || rawProfile.location === 'Berlin, Germany') ? '' : (rawProfile.location || '');
+  const timezone = (rawProfile.timezone === 'Central European Time (CET) - UTC+1') ? '' : (rawProfile.timezone || '');
+
+  return {
+    ...rawProfile,
+    headline,
+    securitySettings,
+    subscription,
+    phoneNumber,
+    location,
+    timezone
+  };
+};
+
 /**
  * Get profile by user ID
  */
@@ -279,7 +307,7 @@ const getProfileByUserId = async (userId) => {
 
       if (!doc) return null;
 
-      return {
+      return sanitizeProfile({
         id: userId,
         fullName: userDoc ? userDoc.fullName : '',
         email: userDoc ? userDoc.email : '',
@@ -302,7 +330,7 @@ const getProfileByUserId = async (userId) => {
         notifications: doc.notifications || { courseActivity: true, liveSessions: true, newsletter: false },
         securitySettings: doc.securitySettings || { passwordLastChanged: '', twoFactorEnabled: false, twoFactorMethod: '' },
         subscription: doc.subscription || { planName: 'Free Plan', price: 'Free', nextBillingDate: '', paymentMethod: '', status: 'Active' }
-      };
+      });
     } catch (e) {
       return null;
     }
@@ -334,7 +362,7 @@ const getProfileByUserId = async (userId) => {
       profiles.set(userId, profile);
     }
   }
-  return profile;
+  return sanitizeProfile(profile);
 };
 
 /**
@@ -356,7 +384,7 @@ const updateProfileByUserId = async (userId, updates) => {
         if (updates.avatarUrl) userUpdates.avatarUrl = updates.avatarUrl;
         await userDoc.update(userUpdates);
       }
-      return {
+      return sanitizeProfile({
         id: userId,
         fullName: userDoc ? userDoc.fullName : '',
         email: userDoc ? userDoc.email : '',
@@ -379,7 +407,7 @@ const updateProfileByUserId = async (userId, updates) => {
         notifications: doc.notifications || { courseActivity: true, liveSessions: true, newsletter: false },
         securitySettings: doc.securitySettings || { passwordLastChanged: '', twoFactorEnabled: false, twoFactorMethod: '' },
         subscription: doc.subscription || { planName: 'Free Plan', price: 'Free', nextBillingDate: '', paymentMethod: '', status: 'Active' }
-      };
+      });
     } catch (e) {
       return null;
     }
