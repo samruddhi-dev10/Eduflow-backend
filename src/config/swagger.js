@@ -610,6 +610,45 @@ const options = {
           }
         }
       },
+      '/api/profile/avatar': {
+        post: {
+          tags: ['Profile & Onboarding'],
+          summary: 'Upload or Generate Avatar / Photo Picture',
+          description: 'Upload an actual photo file (Base64 data URI), direct image URL, or generate an avatar seed.',
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    file: { type: 'string', example: 'data:image/png;base64,iVBORw0KGgo...', description: 'Base64 image file data URI' },
+                    avatarUrl: { type: 'string', example: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500', description: 'Direct photo image URL' },
+                    seed: { type: 'string', example: 'custom_seed', description: 'DiceBear avatar seed' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            200: {
+              description: 'Profile picture uploaded successfully',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean', example: true },
+                      message: { type: 'string', example: 'Profile picture uploaded successfully' },
+                      avatarUrl: { type: 'string', example: 'http://localhost:5000/uploads/avatars/avatar_123.jpg' }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
       '/api/profile/settings': {
         get: {
           tags: ['Profile & Settings'],
