@@ -309,11 +309,18 @@ const uploadAvatar = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
 
+    const host = req.get('host') || 'localhost:5000';
+    const protocol = req.protocol || 'http';
     const { avatarUrl, avatar, file, image, seed } = req.body || {};
     let finalAvatarUrl = '';
 
+    // 0. Binary File upload via multipart/form-data (multer)
+    const uploadedFile = req.file || (Array.isArray(req.files) && req.files.length > 0 ? req.files[0] : null);
+    if (uploadedFile && uploadedFile.filename) {
+      finalAvatarUrl = `${protocol}://${host}/uploads/avatars/${uploadedFile.filename}`;
+    }
     // 1. Direct Image URL provided
-    if (avatarUrl && typeof avatarUrl === 'string' && (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://'))) {
+    else if (avatarUrl && typeof avatarUrl === 'string' && (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://'))) {
       finalAvatarUrl = avatarUrl;
     }
     // 2. Actual Photo File upload via Base64 Data URI (e.g. data:image/png;base64,...)
@@ -333,8 +340,6 @@ const uploadAvatar = async (req, res, next) => {
         const filePath = path.join(uploadsDir, fileName);
         fs.writeFileSync(filePath, buffer);
         
-        const host = req.get('host') || 'localhost:5000';
-        const protocol = req.protocol || 'http';
         finalAvatarUrl = `${protocol}://${host}/uploads/avatars/${fileName}`;
       }
     }
@@ -351,7 +356,10 @@ const uploadAvatar = async (req, res, next) => {
       success: true,
       message: 'Profile picture uploaded successfully',
       avatarUrl: finalAvatarUrl,
-      data: profile
+      data: {
+        avatarUrl: finalAvatarUrl,
+        ...(profile || {})
+      }
     });
   } catch (error) {
     next(error);
